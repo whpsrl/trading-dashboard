@@ -1,20 +1,23 @@
-"""Market Data API Endpoints"""
-from fastapi import APIRouter, HTTPException
-from typing import Dict, List
-
+"""
+Market Data API Router
+Endpoints for fetching market data, prices, OHLCV, orderbooks, etc.
+"""
+from fastapi import APIRouter, Query, HTTPException
+from typing import Optional
 from app.market_data.service import market_service
 
 router = APIRouter()
 
 @router.get("/price")
-async def get_price(symbol: str, exchange: str) -> Dict:
+async def get_price(
+    symbol: str = Query(..., description="Trading pair symbol (e.g., BTC/USDT)"),
+    exchange: str = Query("binance", description="Exchange name")
+):
     """
-    Get current price for an asset
+    Get current price for a trading pair
     
-    Examples:
-    - /api/market/price?symbol=BTC/USDT&exchange=binance
-    - /api/market/price?symbol=EUR/USD&exchange=oanda
-    - /api/market/price?symbol=AAPL&exchange=finnhub
+    Returns real-time price data with 24h change, volume, etc.
+    Falls back to CoinGecko if exchange is geo-blocked.
     """
     try:
         price_data = await market_service.get_price(symbol, exchange)
@@ -24,47 +27,51 @@ async def get_price(symbol: str, exchange: str) -> Dict:
 
 @router.get("/ohlcv")
 async def get_ohlcv(
-    symbol: str,
-    exchange: str,
-    timeframe: str = "1h",
-    limit: int = 100
-) -> List[Dict]:
+    symbol: str = Query(..., description="Trading pair symbol (e.g., BTC/USDT)"),
+    timeframe: str = Query("1h", description="Timeframe (1m, 5m, 15m, 1h, 4h, 1d, 1w)"),
+    limit: int = Query(100, description="Number of candles to return", ge=1, le=1000),
+    exchange: str = Query("binance", description="Exchange name")
+):
     """
-    Get OHLCV candlestick data
+    Get OHLCV (candlestick) data for charting
     
-    Example:
-    - /api/market/ohlcv?symbol=BTC/USDT&exchange=binance&timeframe=1h&limit=100
+    Returns array of [timestamp, open, high, low, close, volume]
     """
     try:
-        candles = await market_service.get_ohlcv(symbol, exchange, timeframe, limit)
-        return candles
+        ohlcv_data = await market_service.get_ohlcv(symbol, timeframe, limit, exchange)
+        return ohlcv_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/test")
-async def test_connection():
-    """Test market data connections"""
-    results = {}
+@router.get("/orderbook")
+async def get_orderbook(
+    symbol: str = Query(..., description="Trading pair symbol (e.g., BTC/USDT)"),
+    exchange: str = Query("binance", description="Exchange name")
+):
+    """
+    Get order book (bids and asks) for a trading pair
     
-    # Test Binance
+    Returns top 20 bids and asks with price and quantity
+    """
     try:
-        btc = await market_service.get_price("BTC/USDT", "binance")
-        results['binance'] = {"status": "✅ Connected", "btc_price": btc['price']}
+        orderbook_data = await market_service.get_orderbook(symbol, exchange)
+        return orderbook_data
     except Exception as e:
-        results['binance'] = {"status": "❌ Error", "error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/trades")
+async def get_trades(
+    symbol: str = Query(..., description="Trading pair symbol (e.g., BTC/USDT)"),
+    limit: int = Query(50, description="Number of trades to return", ge=1, le=100),
+    exchange: str = Query("binance", description="Exchange name")
+):
+    """
+    Get recent trades for a trading pair
     
-    # Test OANDA (if configured)
+    Returns list of recent trades with price, amount, side, timestamp
+    """
     try:
-        eur = await market_service.get_price("EUR/USD", "oanda")
-        results['oanda'] = {"status": "✅ Connected", "eur_usd": eur['price']}
+        trades_data = await market_service.get_trades(symbol, limit, exchange)
+        return trades_data
     except Exception as e:
-        results['oanda'] = {"status": "❌ Error", "error": str(e)}
-    
-    # Test Finnhub (if configured)
-    try:
-        aapl = await market_service.get_price("AAPL", "finnhub")
-        results['finnhub'] = {"status": "✅ Connected", "aapl_price": aapl['price']}
-    except Exception as e:
-        results['finnhub'] = {"status": "❌ Error", "error": str(e)}
-    
-    return results
+        raise HTTPException(status_code=500, detail=str(e))
