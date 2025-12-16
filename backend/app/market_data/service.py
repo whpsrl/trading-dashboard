@@ -1,20 +1,33 @@
 """
-Market Data Service
+Market Data Service with Redis Caching
 Handles fetching real-time and historical market data from various exchanges
 Uses CoinGecko as fallback when exchanges are geo-blocked
+Implements Redis caching to avoid rate limits
 """
 import ccxt
 import logging
+import json
 from typing import Dict, List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
+import redis
+import os
 
 logger = logging.getLogger(__name__)
 
 class MarketDataService:
     def __init__(self):
-        """Initialize exchange connections"""
+        """Initialize exchange connections and Redis cache"""
         self.exchanges = {}
+        
+        # Initialize Redis
+        redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+        try:
+            self.redis_client = redis.from_url(redis_url, decode_responses=True)
+            logger.info("✅ Redis cache connected")
+        except Exception as e:
+            logger.warning(f"⚠️ Redis not available: {str(e)}, continuing without cache")
+            self.redis_client = None
         
     def _get_exchange(self, exchange_name: str) -> ccxt.Exchange:
         """Get or create exchange instance"""
@@ -30,14 +43,51 @@ class MarketDataService:
                 raise
         return self.exchanges[exchange_name]
     
+    def _get_cached_data(self, cache_key: str) -> Optional[Dict]:
+        """Get data from Redis cache"""
+        if not self.redis_client:
+            return None
+        
+        try:
+            cached = self.redis_client.get(cache_key)
+            if cached:
+                logger.info(f"✅ Cache HIT: {cache_key}")
+                return json.loads(cached)
+            logger.info(f"❌ Cache MISS: {cache_key}")
+            return None
+        except Exception as e:
+            logger.error(f"Error reading from cache: {str(e)}")
+            return None
+    
+    def _set_cached_data(self, cache_key: str, data: Dict, ttl: int = 60):
+        """Set data in Redis cache with TTL (seconds)"""
+        if not self.redis_client:
+            return
+        
+        try:
+            self.redis_client.setex(
+                cache_key,
+                ttl,
+                json.dumps(data)
+            )
+            logger.info(f"💾 Cached: {cache_key} (TTL: {ttl}s)")
+        except Exception as e:
+            logger.error(f"Error writing to cache: {str(e)}")
+    
     def _get_price_from_coingecko(self, symbol: str) -> Optional[Dict]:
         """
         Fetch price from CoinGecko as fallback
         Works from any location without geo-restrictions
+        Uses Redis cache to avoid rate limits
         """
+        # Check cache first (60 second TTL)
+        cache_key = f"coingecko:price:{symbol}"
+        cached_data = self._get_cached_data(cache_key)
+        if cached_data:
+            return cached_data
+        
         try:
             # Convert trading pair to CoinGecko format
-            # BTC/USDT -> bitcoin, ETH/USDT -> ethereum, etc.
             symbol_map = {
                 'BTC': 'bitcoin',
                 'ETH': 'ethereum',
@@ -72,7 +122,7 @@ class MarketDataService:
             
             if coin_id in data:
                 coin_data = data[coin_id]
-                return {
+                result = {
                     'symbol': symbol,
                     'price': coin_data.get('usd', 0),
                     'change_24h': coin_data.get('usd_24h_change', 0),
@@ -80,9 +130,24 @@ class MarketDataService:
                     'timestamp': datetime.now().isoformat(),
                     'source': 'coingecko'
                 }
+                
+                # Cache for 60 seconds
+                self._set_cached_data(cache_key, result, ttl=60)
+                
+                return result
             
             return None
             
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                logger.error("⚠️ CoinGecko rate limit hit! Using cache or fallback")
+                # Try to return stale cache if available
+                stale_cache = self._get_cached_data(f"coingecko:price:{symbol}:stale")
+                if stale_cache:
+                    logger.info("✅ Returning stale cache data")
+                    return stale_cache
+            logger.error(f"Error fetching from CoinGecko: {str(e)}")
+            return None
         except Exception as e:
             logger.error(f"Error fetching from CoinGecko: {str(e)}")
             return None
@@ -91,13 +156,20 @@ class MarketDataService:
         """
         Get current price for a symbol
         Falls back to CoinGecko if exchange is geo-blocked
+        Uses Redis caching to avoid rate limits
         """
+        # Check cache first (30 second TTL)
+        cache_key = f"price:{exchange}:{symbol}"
+        cached_data = self._get_cached_data(cache_key)
+        if cached_data:
+            return cached_data
+        
         try:
             # Try to get from specified exchange first
             exchange_obj = self._get_exchange(exchange)
             ticker = exchange_obj.fetch_ticker(symbol)
             
-            return {
+            result = {
                 'symbol': symbol,
                 'price': ticker['last'],
                 'bid': ticker['bid'],
@@ -108,12 +180,21 @@ class MarketDataService:
                 'source': exchange
             }
             
+            # Cache for 30 seconds
+            self._set_cached_data(cache_key, result, ttl=30)
+            
+            return result
+            
         except ccxt.ExchangeError as e:
             # Check if it's a geo-restriction error
             if '451' in str(e) or 'restricted location' in str(e).lower():
                 logger.warning(f"Exchange {exchange} geo-blocked, falling back to CoinGecko")
                 coingecko_data = self._get_price_from_coingecko(symbol)
                 if coingecko_data:
+                    # Also cache this for longer (to reduce CoinGecko calls)
+                    self._set_cached_data(cache_key, coingecko_data, ttl=60)
+                    # Keep stale copy for emergencies
+                    self._set_cached_data(f"{cache_key}:stale", coingecko_data, ttl=300)
                     return coingecko_data
                 raise Exception(f"Both {exchange} and CoinGecko failed for {symbol}")
             
@@ -122,6 +203,7 @@ class MarketDataService:
             # Try CoinGecko as fallback
             coingecko_data = self._get_price_from_coingecko(symbol)
             if coingecko_data:
+                self._set_cached_data(cache_key, coingecko_data, ttl=60)
                 return coingecko_data
             raise
             
@@ -130,6 +212,7 @@ class MarketDataService:
             # Try CoinGecko as last resort
             coingecko_data = self._get_price_from_coingecko(symbol)
             if coingecko_data:
+                self._set_cached_data(cache_key, coingecko_data, ttl=60)
                 return coingecko_data
             raise
     
@@ -140,10 +223,20 @@ class MarketDataService:
         limit: int = 100,
         exchange: str = "binance"
     ) -> List[List]:
-        """Get OHLCV (candlestick) data"""
+        """Get OHLCV (candlestick) data with caching"""
+        # Check cache (5 minute TTL for OHLCV)
+        cache_key = f"ohlcv:{exchange}:{symbol}:{timeframe}:{limit}"
+        cached_data = self._get_cached_data(cache_key)
+        if cached_data:
+            return cached_data
+        
         try:
             exchange_obj = self._get_exchange(exchange)
             ohlcv = exchange_obj.fetch_ohlcv(symbol, timeframe, limit=limit)
+            
+            # Cache for 5 minutes
+            self._set_cached_data(cache_key, ohlcv, ttl=300)
+            
             return ohlcv
         except Exception as e:
             logger.error(f"Error fetching OHLCV: {str(e)}")
