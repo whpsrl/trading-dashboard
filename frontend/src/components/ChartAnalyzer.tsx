@@ -23,18 +23,6 @@ const SYMBOLS = [
   { value: 'MATICUSDT', label: 'Polygon (MATIC/USDT)', type: 'crypto' },
   { value: 'DOTUSDT', label: 'Polkadot (DOT/USDT)', type: 'crypto' },
   { value: 'LINKUSDT', label: 'Chainlink (LINK/USDT)', type: 'crypto' },
-  { value: 'GBPJPY', label: 'GBP/JPY', type: 'forex' },
-  { value: 'EURUSD', label: 'EUR/USD', type: 'forex' },
-  { value: 'USDJPY', label: 'USD/JPY', type: 'forex' },
-  { value: 'GBPUSD', label: 'GBP/USD', type: 'forex' },
-  { value: 'AUDUSD', label: 'AUD/USD', type: 'forex' },
-  { value: 'AAPL', label: 'Apple', type: 'stock' },
-  { value: 'GOOGL', label: 'Google', type: 'stock' },
-  { value: 'MSFT', label: 'Microsoft', type: 'stock' },
-  { value: 'TSLA', label: 'Tesla', type: 'stock' },
-  { value: 'AMZN', label: 'Amazon', type: 'stock' },
-  { value: 'NVDA', label: 'NVIDIA', type: 'stock' },
-  { value: 'META', label: 'Meta', type: 'stock' },
 ];
 
 const TIMEFRAMES = [
@@ -69,7 +57,7 @@ export default function ChartAnalyzer() {
 
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
-      height: 600,
+      height: chartContainerRef.current.clientHeight,
       layout: {
         background: { color: '#1a1a1a' },
         textColor: '#d1d4dc',
@@ -106,6 +94,7 @@ export default function ChartAnalyzer() {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
           width: chartContainerRef.current.clientWidth,
+          height: chartContainerRef.current.clientHeight,
         });
       }
     };
@@ -230,19 +219,46 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
   }, [selectedSymbol, selectedTimeframe]);
 
   return (
-    <div className="flex flex-row h-screen w-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 overflow-hidden">
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: '65% 35%',
+      height: '100vh',
+      width: '100vw',
+      background: 'linear-gradient(to bottom right, #0f172a, #1e3a8a, #0f172a)',
+      overflow: 'hidden'
+    }}>
       
-      {/* LEFT: Chart + Controls */}
-      <div className="flex flex-col shrink-0" style={{ width: '65%', minWidth: '65%', maxWidth: '65%' }}>
+      {/* LEFT COLUMN: Chart */}
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
         
-        {/* Top Controls */}
-        <div className="flex gap-4 items-center bg-slate-800/80 backdrop-blur p-4 border-b border-blue-900/30 shrink-0">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Chart Analyzer</h1>
+        {/* Controls */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '1rem', 
+          alignItems: 'center',
+          padding: '1rem',
+          backgroundColor: 'rgba(30, 41, 59, 0.8)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(59, 130, 246, 0.3)'
+        }}>
+          <h1 style={{ 
+            fontSize: '1.5rem', 
+            fontWeight: 'bold',
+            background: 'linear-gradient(to right, #60a5fa, #22d3ee)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>Chart Analyzer</h1>
           
           <select
             value={selectedSymbol.value}
             onChange={(e) => setSelectedSymbol(SYMBOLS.find(s => s.value === e.target.value)!)}
-            className="px-4 py-2 bg-slate-700 text-white rounded-lg border border-blue-600 focus:border-blue-500 focus:outline-none"
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#334155',
+              color: 'white',
+              borderRadius: '0.5rem',
+              border: '1px solid #2563eb'
+            }}
           >
             {SYMBOLS.map((sym) => (
               <option key={sym.value} value={sym.value}>{sym.label}</option>
@@ -252,7 +268,13 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
           <select
             value={selectedTimeframe.value}
             onChange={(e) => setSelectedTimeframe(TIMEFRAMES.find(t => t.value === e.target.value)!)}
-            className="px-4 py-2 bg-slate-700 text-white rounded-lg border border-blue-600 focus:border-blue-500 focus:outline-none"
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#334155',
+              color: 'white',
+              borderRadius: '0.5rem',
+              border: '1px solid #2563eb'
+            }}
           >
             {TIMEFRAMES.map((tf) => (
               <option key={tf.value} value={tf.value}>{tf.label}</option>
@@ -262,34 +284,61 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
           <button
             onClick={loadChartData}
             disabled={loading}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+            style={{
+              padding: '0.5rem 1.5rem',
+              backgroundColor: '#2563eb',
+              color: 'white',
+              borderRadius: '0.5rem',
+              fontWeight: '500',
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
           >
             {loading ? 'Loading...' : 'Refresh'}
           </button>
           
           {chartData.length > 0 && (
-            <div className="text-sm text-green-400 ml-auto">✓ {chartData.length} candles</div>
-          )}
-          
-          {error && (
-            <div className="text-sm text-red-400">{error}</div>
+            <span style={{ color: '#4ade80', fontSize: '0.875rem', marginLeft: 'auto' }}>
+              ✓ {chartData.length} candles
+            </span>
           )}
         </div>
 
         {/* Chart */}
-        <div className="flex-1 bg-slate-900 p-4">
-          <div ref={chartContainerRef} className="w-full h-full rounded-lg border border-blue-900/30" />
+        <div style={{ flex: 1, padding: '1rem', backgroundColor: '#0f172a' }}>
+          <div 
+            ref={chartContainerRef} 
+            style={{ 
+              width: '100%', 
+              height: '100%',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(59, 130, 246, 0.3)'
+            }} 
+          />
         </div>
       </div>
 
-      {/* RIGHT: AI Panel */}
-      <div className="flex flex-col bg-slate-900/80 backdrop-blur border-l border-blue-900/30 shrink-0" style={{ width: '35%', minWidth: '35%', maxWidth: '35%' }}>
+      {/* RIGHT COLUMN: AI Panel */}
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        height: '100%',
+        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+        backdropFilter: 'blur(12px)',
+        borderLeft: '1px solid rgba(59, 130, 246, 0.3)',
+        overflow: 'hidden'
+      }}>
         
         {/* AI Controls */}
-        <div className="p-4 space-y-4 border-b border-blue-900/30">
-          <h2 className="text-xl font-bold text-blue-400">🤖 AI Analysis</h2>
+        <div style={{ 
+          padding: '1rem',
+          borderBottom: '1px solid rgba(59, 130, 246, 0.3)',
+          flexShrink: 0
+        }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#60a5fa', marginBottom: '1rem' }}>
+            🤖 AI Analysis
+          </h2>
           
-          <div className="space-y-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
             {PRESET_PROMPTS.map((preset) => (
               <button
                 key={preset.label}
@@ -298,59 +347,108 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                   analyzeWithAI(preset.prompt);
                 }}
                 disabled={analyzing || !chartData.length}
-                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors text-left"
+                style={{
+                  padding: '0.625rem 1rem',
+                  backgroundColor: '#2563eb',
+                  color: 'white',
+                  borderRadius: '0.75rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  textAlign: 'left',
+                  cursor: (analyzing || !chartData.length) ? 'not-allowed' : 'pointer',
+                  opacity: (analyzing || !chartData.length) ? 0.5 : 1
+                }}
               >
                 {preset.label}
               </button>
             ))}
           </div>
 
-          <div className="space-y-2">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Custom analysis request..."
-              className="w-full px-3 py-2 bg-slate-800 text-white rounded-lg border border-blue-700 focus:border-blue-500 focus:outline-none resize-none text-sm"
-              rows={3}
-            />
-            <button
-              onClick={() => analyzeWithAI()}
-              disabled={analyzing || !prompt.trim() || !chartData.length}
-              className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors text-sm"
-            >
-              {analyzing ? 'Analyzing...' : 'Analyze'}
-            </button>
-          </div>
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Custom analysis..."
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              backgroundColor: '#1e293b',
+              color: 'white',
+              borderRadius: '0.75rem',
+              border: '1px solid #1d4ed8',
+              fontSize: '0.875rem',
+              resize: 'none',
+              marginBottom: '0.5rem'
+            }}
+            rows={3}
+          />
+          <button
+            onClick={() => analyzeWithAI()}
+            disabled={analyzing || !prompt.trim() || !chartData.length}
+            style={{
+              width: '100%',
+              padding: '0.625rem',
+              backgroundColor: '#059669',
+              color: 'white',
+              borderRadius: '0.75rem',
+              fontWeight: '600',
+              fontSize: '0.875rem',
+              cursor: (analyzing || !prompt.trim() || !chartData.length) ? 'not-allowed' : 'pointer',
+              opacity: (analyzing || !prompt.trim() || !chartData.length) ? 0.5 : 1
+            }}
+          >
+            {analyzing ? 'Analyzing...' : 'Analyze'}
+          </button>
         </div>
 
-        {/* AI Results - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 bg-slate-950">
+        {/* AI Results */}
+        <div style={{ 
+          flex: 1, 
+          overflowY: 'auto',
+          padding: '1rem',
+          backgroundColor: 'rgba(2, 6, 23, 0.7)'
+        }}>
           {analyzing && (
-            <div className="text-center py-12">
-              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-              <div className="text-blue-400">Analyzing...</div>
+            <div style={{ textAlign: 'center', paddingTop: '3rem' }}>
+              <div style={{ 
+                width: '3rem', 
+                height: '3rem', 
+                border: '4px solid #2563eb',
+                borderTopColor: 'transparent',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto 1rem'
+              }} />
+              <div style={{ color: '#60a5fa' }}>Analyzing...</div>
             </div>
           )}
 
           {!aiResponse && !analyzing && (
-            <div className="text-center py-12 text-gray-500">
-              <div className="text-5xl mb-2">🤖</div>
+            <div style={{ textAlign: 'center', paddingTop: '3rem', color: '#6b7280' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🤖</div>
               <div>Select an analysis</div>
             </div>
           )}
 
           {aiResponse && (
-            <div className="space-y-4 text-sm text-gray-300">
+            <div style={{ color: '#d1d5db', fontSize: '0.875rem', lineHeight: '1.6' }}>
               {aiResponse.split('\n\n').map((block, idx) => {
                 if (block.startsWith('##')) {
                   return (
-                    <div key={idx} className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4">
-                      <h3 className="text-blue-400 font-bold mb-2">{block.replace(/^##\s*/, '')}</h3>
+                    <div key={idx} style={{ 
+                      backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                      border: '1px solid rgba(37, 99, 235, 0.3)',
+                      borderRadius: '0.5rem',
+                      padding: '1rem',
+                      marginBottom: '1rem'
+                    }}>
+                      <h3 style={{ color: '#60a5fa', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                        {block.replace(/^##\s*/, '')}
+                      </h3>
                     </div>
                   );
                 }
                 return (
-                  <div key={idx} className="leading-relaxed">
+                  <div key={idx} style={{ marginBottom: '0.75rem' }}>
                     {block}
                   </div>
                 );
