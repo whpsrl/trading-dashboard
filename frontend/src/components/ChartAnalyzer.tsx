@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { createChart, IChartApi, ISeriesApi } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 
 interface OHLCVData {
-  time: number;
+  time: UTCTimestamp;
   open: number;
   high: number;
   low: number;
@@ -117,7 +117,7 @@ export default function ChartAnalyzer() {
       
       if (data.data && Array.isArray(data.data)) {
         const formattedData: OHLCVData[] = data.data.map((item: any) => ({
-          time: new Date(item.timestamp).getTime() / 1000,
+          time: (new Date(item.timestamp).getTime() / 1000) as UTCTimestamp,
           open: parseFloat(item.open),
           high: parseFloat(item.high),
           low: parseFloat(item.low),
