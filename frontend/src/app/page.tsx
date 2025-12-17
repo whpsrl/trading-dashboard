@@ -91,25 +91,25 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [symbol, timeframe]);
 
-  const getPredictionColor = (direction) => {
+  const getPredictionColor = (direction: string) => {
     if (direction === 'UP') return 'text-green-400';
     if (direction === 'DOWN') return 'text-red-400';
     return 'text-yellow-400';
   };
 
-  const getPredictionBg = (direction) => {
+  const getPredictionBg = (direction: string) => {
     if (direction === 'UP') return 'bg-green-900/30 border-green-500';
     if (direction === 'DOWN') return 'bg-red-900/30 border-red-500';
     return 'bg-yellow-900/30 border-yellow-500';
   };
 
-  const getPredictionIcon = (direction) => {
+  const getPredictionIcon = (direction: string) => {
     if (direction === 'UP') return '↗';
     if (direction === 'DOWN') return '↘';
     return '→';
   };
 
-  const getPatternBadgeColor = (signal) => {
+  const getPatternBadgeColor = (signal: string) => {
     if (signal === 'BULLISH') return 'bg-green-600/20 text-green-400 border-green-500';
     if (signal === 'BEARISH') return 'bg-red-600/20 text-red-400 border-red-500';
     return 'bg-gray-600/20 text-gray-400 border-gray-500';
