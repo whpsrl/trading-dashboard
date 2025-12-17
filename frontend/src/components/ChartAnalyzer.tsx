@@ -232,11 +232,10 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
     setDrawnLines([]);
   };
 
-  const autoDrawLines = async () => {
+  const autoDrawLines = async (drawType: string) => {
     if (!chartData.length || !chartRef.current) return;
 
     setAutoDrawing(true);
-    clearAllLines();
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -256,7 +255,8 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
         body: JSON.stringify({
           symbol: selectedSymbol.label,
           timeframe: selectedTimeframe.label,
-          candles: candles
+          candles: candles,
+          drawType: drawType
         }),
       });
 
@@ -268,7 +268,6 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
 
         result.lines.forEach((line: any) => {
           if (line.type === 'support' || line.type === 'resistance') {
-            // Draw horizontal line using LineSeries
             const lineSeries = chart.addLineSeries({
               color: line.color || (line.type === 'support' ? '#22c55e' : '#ef4444'),
               lineWidth: 2,
@@ -276,7 +275,6 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
               lastValueVisible: false,
             });
             
-            // Create horizontal line data
             const lineData = chartData.map(candle => ({
               time: candle.time,
               value: line.price
@@ -285,11 +283,27 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
             lineSeries.setData(lineData);
             newLines.push(lineSeries);
           }
-          // More line types will be added: trendline, imbalance, etc.
+          
+          if (line.type === 'trendline' && line.points && line.points.length >= 2) {
+            const lineSeries = chart.addLineSeries({
+              color: line.color || '#3b82f6',
+              lineWidth: 2,
+              priceLineVisible: false,
+              lastValueVisible: false,
+            });
+            
+            const lineData = line.points.map((point: any) => ({
+              time: (new Date(point.time).getTime() / 1000) as UTCTimestamp,
+              value: point.price
+            }));
+            
+            lineSeries.setData(lineData);
+            newLines.push(lineSeries);
+          }
         });
 
-        drawnLinesRef.current = newLines;
-        setDrawnLines(result.lines);
+        drawnLinesRef.current = [...drawnLinesRef.current, ...newLines];
+        setDrawnLines([...drawnLines, ...result.lines]);
       }
     } catch (error) {
       console.error('Auto-draw error:', error);
