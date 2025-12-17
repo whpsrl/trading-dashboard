@@ -279,28 +279,10 @@ async def get_stock_data(
     timeframe: str = Query("1h", description="Timeframe"),
     limit: int = Query(100, description="Number of candles")
 ):
-    """Get stock OHLCV data from Finnhub with rate limiting"""
-    try:
-        from app.market_data.service_finnhub import finnhub_service
-        
-        if not finnhub_service.is_available():
-            raise HTTPException(
-                status_code=503,
-                detail="Finnhub API not configured. Please set FINNHUB_API_KEY"
-            )
-        
-        # Get candles from Finnhub
-        candles = await finnhub_service.get_stock_candles(symbol, timeframe, limit)
-        
-        if not candles:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No data found for {symbol}. Check if symbol is valid (e.g., AAPL, TSLA, GOOGL)"
-            )
-        
-        return {'data': candles}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Finnhub error: {str(e)}")
+    """Get stock OHLCV data - Limited support"""
+    # Stocks require Yahoo Finance or similar
+    # For now, return error with clear message
+    raise HTTPException(
+        status_code=501,
+        detail="Stock data temporarily unavailable. Please use crypto symbols (BTC, ETH, SOL, etc.)"
+    )
