@@ -481,8 +481,27 @@ async def get_crypto_data(
         
         current_price = float(klines[-1][4])
         
-        # Real AI Prediction
-        prediction = ai_predict(candles)
+        # Real AI Prediction - with fallback
+        try:
+            prediction = ai_predict(candles)
+        except Exception as e:
+            print(f"AI prediction error: {e}")
+            prediction = {
+                "direction": "NEUTRAL",
+                "confidence": 50,
+                "score": 0,
+                "ml_score": 0,
+                "patterns_detected": [],
+                "candlestick_patterns": [],
+                "chart_patterns": [],
+                "support_resistance": [],
+                "features": {
+                    "price_momentum_5": 0,
+                    "price_momentum_20": 0,
+                    "volatility": 0,
+                    "volume_trend": 0
+                }
+            }
         
         return {
             "symbol": symbol.upper(),
