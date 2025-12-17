@@ -446,17 +446,17 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
             <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: '600' }}>
               AI DRAWING TOOLS
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <button
                 onClick={() => autoDrawLines('support_resistance')}
                 disabled={autoDrawing || !chartData.length}
                 style={{
                   width: '100%',
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.625rem 1rem',
                   background: 'linear-gradient(to right, #10b981, #059669)',
                   color: 'white',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.7rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
                   fontWeight: '600',
                   textAlign: 'left',
                   cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
@@ -464,7 +464,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                   border: 'none'
                 }}
               >
-                📏 S/R
+                📏 Support & Resistance
               </button>
               
               <button
@@ -472,11 +472,11 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                 disabled={autoDrawing || !chartData.length}
                 style={{
                   width: '100%',
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.625rem 1rem',
                   background: 'linear-gradient(to right, #3b82f6, #2563eb)',
                   color: 'white',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.7rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
                   fontWeight: '600',
                   textAlign: 'left',
                   cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
@@ -484,7 +484,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                   border: 'none'
                 }}
               >
-                📐 Trends
+                📐 Trendlines
               </button>
               
               <button
@@ -492,11 +492,11 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                 disabled={autoDrawing || !chartData.length}
                 style={{
                   width: '100%',
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.625rem 1rem',
                   background: 'linear-gradient(to right, #f59e0b, #d97706)',
                   color: 'white',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.7rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
                   fontWeight: '600',
                   textAlign: 'left',
                   cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
@@ -504,7 +504,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                   border: 'none'
                 }}
               >
-                🟢 FVG
+                🟢 Imbalance Zones (FVG)
               </button>
               
               <button
@@ -512,11 +512,11 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                 disabled={autoDrawing || !chartData.length}
                 style={{
                   width: '100%',
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.625rem 1rem',
                   background: 'linear-gradient(to right, #8b5cf6, #7c3aed)',
                   color: 'white',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.7rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
                   fontWeight: '600',
                   textAlign: 'left',
                   cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
@@ -524,7 +524,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                   border: 'none'
                 }}
               >
-                📊 Ranges
+                📊 Consolidation Zones
               </button>
             </div>
           </div>
@@ -563,7 +563,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
             TEXT ANALYSIS
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
             {PRESET_PROMPTS.map((preset) => (
               <button
                 key={preset.label}
@@ -573,16 +573,15 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                 }}
                 disabled={analyzing || !chartData.length}
                 style={{
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.625rem 1rem',
                   backgroundColor: '#2563eb',
                   color: 'white',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.7rem',
+                  borderRadius: '0.75rem',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   textAlign: 'left',
                   cursor: (analyzing || !chartData.length) ? 'not-allowed' : 'pointer',
-                  opacity: (analyzing || !chartData.length) ? 0.5 : 1,
-                  border: 'none'
+                  opacity: (analyzing || !chartData.length) ? 0.5 : 1
                 }}
               >
                 {preset.label}
@@ -596,31 +595,30 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
             placeholder="Custom analysis..."
             style={{
               width: '100%',
-              padding: '0.5rem',
+              padding: '0.75rem',
               backgroundColor: '#1e293b',
               color: 'white',
-              borderRadius: '0.375rem',
+              borderRadius: '0.75rem',
               border: '1px solid #1d4ed8',
-              fontSize: '0.75rem',
+              fontSize: '0.875rem',
               resize: 'none',
-              marginBottom: '0.375rem'
+              marginBottom: '0.5rem'
             }}
-            rows={2}
+            rows={3}
           />
           <button
             onClick={() => analyzeWithAI()}
             disabled={analyzing || !prompt.trim() || !chartData.length}
             style={{
               width: '100%',
-              padding: '0.375rem',
+              padding: '0.625rem',
               backgroundColor: '#059669',
               color: 'white',
-              borderRadius: '0.375rem',
+              borderRadius: '0.75rem',
               fontWeight: '600',
-              fontSize: '0.75rem',
+              fontSize: '0.875rem',
               cursor: (analyzing || !prompt.trim() || !chartData.length) ? 'not-allowed' : 'pointer',
-              opacity: (analyzing || !prompt.trim() || !chartData.length) ? 0.5 : 1,
-              border: 'none'
+              opacity: (analyzing || !prompt.trim() || !chartData.length) ? 0.5 : 1
             }}
           >
             {analyzing ? 'Analyzing...' : 'Analyze'}
