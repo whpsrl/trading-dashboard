@@ -230,13 +230,13 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
   }, [selectedSymbol, selectedTimeframe]);
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
+    <div className="flex flex-row h-screen w-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 overflow-hidden">
       
-      {/* LEFT: Chart + Controls (65%) */}
-      <div className="flex flex-col" style={{ width: '65%' }}>
+      {/* LEFT: Chart + Controls */}
+      <div className="flex flex-col shrink-0" style={{ width: '65%', minWidth: '65%', maxWidth: '65%' }}>
         
         {/* Top Controls */}
-        <div className="flex gap-4 items-center bg-slate-800/80 backdrop-blur p-4 border-b border-blue-900/30">
+        <div className="flex gap-4 items-center bg-slate-800/80 backdrop-blur p-4 border-b border-blue-900/30 shrink-0">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Chart Analyzer</h1>
           
           <select
@@ -282,8 +282,8 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
         </div>
       </div>
 
-      {/* RIGHT: AI Panel (35%) */}
-      <div className="flex flex-col bg-slate-900/80 backdrop-blur border-l border-blue-900/30" style={{ width: '35%' }}>
+      {/* RIGHT: AI Panel */}
+      <div className="flex flex-col bg-slate-900/80 backdrop-blur border-l border-blue-900/30 shrink-0" style={{ width: '35%', minWidth: '35%', maxWidth: '35%' }}>
         
         {/* AI Controls */}
         <div className="p-4 space-y-4 border-b border-blue-900/30">
