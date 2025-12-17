@@ -265,214 +265,218 @@ Fornisci un'analisi dettagliata, professionale e actionable.`;
   }, [selectedSymbol, selectedTimeframe]);
 
   return (
-    <div className="flex flex-col gap-6 p-6 bg-gray-900 min-h-screen">
-      <div className="flex flex-col gap-4 bg-gray-800 p-6 rounded-lg">
-        <h1 className="text-3xl font-bold text-white">Chart Analyzer</h1>
+    <div className="flex flex-col h-screen bg-gray-900">
+      {/* Top Bar - Controls */}
+      <div className="flex gap-4 items-center bg-gray-800 px-6 py-4 border-b border-gray-700 shrink-0">
+        <h1 className="text-2xl font-bold text-white">Chart Analyzer</h1>
         
-        <div className="flex gap-4 flex-wrap">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-400">Symbol</label>
-            <select
-              value={selectedSymbol.value}
-              onChange={(e) => setSelectedSymbol(SYMBOLS.find(s => s.value === e.target.value)!)}
-              className="px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
-            >
-              {SYMBOLS.map((sym) => (
-                <option key={sym.value} value={sym.value}>
-                  {sym.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <select
+          value={selectedSymbol.value}
+          onChange={(e) => setSelectedSymbol(SYMBOLS.find(s => s.value === e.target.value)!)}
+          className="px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+        >
+          {SYMBOLS.map((sym) => (
+            <option key={sym.value} value={sym.value}>{sym.label}</option>
+          ))}
+        </select>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-400">Timeframe</label>
-            <select
-              value={selectedTimeframe.value}
-              onChange={(e) => setSelectedTimeframe(TIMEFRAMES.find(t => t.value === e.target.value)!)}
-              className="px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
-            >
-              {TIMEFRAMES.map((tf) => (
-                <option key={tf.value} value={tf.value}>
-                  {tf.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <select
+          value={selectedTimeframe.value}
+          onChange={(e) => setSelectedTimeframe(TIMEFRAMES.find(t => t.value === e.target.value)!)}
+          className="px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+        >
+          {TIMEFRAMES.map((tf) => (
+            <option key={tf.value} value={tf.value}>{tf.label}</option>
+          ))}
+        </select>
 
-          <div className="flex items-end">
-            <button
-              onClick={loadChartData}
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors"
-            >
-              {loading ? 'Loading...' : 'Refresh Chart'}
-            </button>
-          </div>
-        </div>
+        <button
+          onClick={loadChartData}
+          disabled={loading}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors text-sm"
+        >
+          {loading ? 'Loading...' : 'Refresh'}
+        </button>
         
-        {error && (
-          <div className="px-4 py-3 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
-            ❌ {error}
-          </div>
-        )}
+        <div className="flex-1"></div>
         
         {chartData.length > 0 && (
-          <div className="text-sm text-gray-400">
-            ✅ Loaded {chartData.length} candles
+          <div className="text-sm text-green-400">✓ {chartData.length} candles</div>
+        )}
+        
+        {error && (
+          <div className="px-3 py-2 bg-red-900/50 border border-red-700 rounded-lg text-red-200 text-xs">
+            {error}
           </div>
         )}
       </div>
 
-      <div className="bg-gray-800 p-4 rounded-lg">
-        <div ref={chartContainerRef} className="w-full" style={{ minHeight: '500px' }} />
-      </div>
-
-      <div className="flex flex-col gap-4 bg-gray-800 p-6 rounded-lg">
-        <h2 className="text-xl font-bold text-white">AI Analysis</h2>
+      {/* Main Content: 2 Columns */}
+      <div className="flex flex-1 overflow-hidden">
         
-        <div className="flex gap-2 flex-wrap">
-          {PRESET_PROMPTS.map((preset) => (
-            <button
-              key={preset.label}
-              onClick={() => {
-                setPrompt(preset.prompt);
-                analyzeWithAI(preset.prompt);
-              }}
-              disabled={analyzing || !chartData.length}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              {preset.label}
-            </button>
-          ))}
+        {/* LEFT: Chart (65%) */}
+        <div className="flex-1 bg-gray-800 p-4" style={{ width: '65%' }}>
+          <div ref={chartContainerRef} className="w-full h-full" />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm text-gray-400">Custom Analysis Request</label>
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Es: Analizza il doppio massimo che vedo sul grafico..."
-            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none resize-none"
-            rows={3}
-          />
-          <button
-            onClick={() => analyzeWithAI()}
-            disabled={analyzing || !prompt.trim() || !chartData.length}
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors"
-          >
-            {analyzing ? 'Analyzing...' : 'Analyze Chart'}
-          </button>
-        </div>
+        {/* RIGHT: AI Analysis (35%) - Scrollable */}
+        <div className="bg-gray-900 border-l border-gray-700 overflow-y-auto" style={{ width: '35%' }}>
+          <div className="p-4 space-y-4">
+            
+            <h2 className="text-xl font-bold text-white sticky top-0 bg-gray-900 pb-3 border-b border-gray-700">
+              🤖 AI Analysis
+            </h2>
+            
+            {/* Preset Buttons */}
+            <div className="space-y-2">
+              {PRESET_PROMPTS.map((preset) => (
+                <button
+                  key={preset.label}
+                  onClick={() => {
+                    setPrompt(preset.prompt);
+                    analyzeWithAI(preset.prompt);
+                  }}
+                  disabled={analyzing || !chartData.length}
+                  className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors text-left"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
 
-        {aiResponse && (
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-400 font-semibold mb-2">AI Analysis Result</label>
-            <div className="space-y-4">
-              {aiResponse.split('\n\n').map((block, blockIdx) => {
-                const lines = block.split('\n').filter(l => l.trim());
-                if (lines.length === 0) return null;
-                
-                const firstLine = lines[0];
-                
-                // Detect section type by header
-                if (firstLine.startsWith('##')) {
-                  const title = firstLine.replace(/^##\s*/, '').replace(/📊|🕯️|📈|⚠️|📋|🎯|🔴|🟢|🟡/g, '').trim();
-                  const icon = firstLine.match(/📊|🕯️|📈|⚠️|📋|🎯|🔴|🟢|🟡/)?.[0] || '📊';
+            {/* Custom Prompt */}
+            <div className="space-y-2">
+              <label className="text-sm text-gray-400">Custom Request</label>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Custom analysis..."
+                className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none resize-none text-sm"
+                rows={3}
+              />
+              <button
+                onClick={() => analyzeWithAI()}
+                disabled={analyzing || !prompt.trim() || !chartData.length}
+                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium transition-colors text-sm"
+              >
+                {analyzing ? 'Analyzing...' : 'Analyze'}
+              </button>
+            </div>
+
+            {/* AI Response */}
+            {aiResponse && (
+              <div className="space-y-3">
+                <div className="text-sm font-semibold text-gray-400">Analysis Result:</div>
+                {aiResponse.split('\n\n').map((block, blockIdx) => {
+                  const lines = block.split('\n').filter(l => l.trim());
+                  if (lines.length === 0) return null;
                   
-                  const getBgColor = () => {
-                    if (title.includes('BULLISH') || title.includes('SCENARI')) return 'from-green-900/30 to-green-800/20 border-green-700/50';
-                    if (title.includes('BEARISH')) return 'from-red-900/30 to-red-800/20 border-red-700/50';
-                    if (title.includes('OVERVIEW') || title.includes('MERCATO')) return 'from-blue-900/30 to-blue-800/20 border-blue-700/50';
-                    if (title.includes('PATTERN') || title.includes('CANDLESTICK')) return 'from-yellow-900/30 to-yellow-800/20 border-yellow-700/50';
-                    if (title.includes('VOLUME')) return 'from-purple-900/30 to-purple-800/20 border-purple-700/50';
-                    if (title.includes('LIVELLI') || title.includes('SUPPORTO')) return 'from-orange-900/30 to-orange-800/20 border-orange-700/50';
-                    return 'from-gray-800 to-gray-900 border-gray-700';
-                  };
+                  const firstLine = lines[0];
                   
-                  return (
-                    <div key={blockIdx} className={`bg-gradient-to-br ${getBgColor()} rounded-xl border p-5 shadow-lg`}>
-                      {/* Header */}
-                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-700/50">
-                        <span className="text-3xl">{icon}</span>
-                        <h2 className="text-xl font-bold text-white">{title}</h2>
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="space-y-3">
-                        {lines.slice(1).map((line, lineIdx) => {
-                          // Sub-headers
-                          if (line.startsWith('###')) {
-                            return (
-                              <h3 key={lineIdx} className="text-lg font-semibold text-green-400 mt-4 mb-2 flex items-center gap-2">
-                                <span className="text-green-500">▶</span>
-                                {line.replace(/^###\s*/, '').replace(/\*\*/g, '')}
-                              </h3>
-                            );
-                          }
-                          
-                          if (line.startsWith('####')) {
-                            return (
-                              <h4 key={lineIdx} className="text-base font-medium text-purple-300 mt-2 ml-2 flex items-center gap-2">
-                                <span className="text-purple-400">•</span>
-                                {line.replace(/^####\s*/, '').replace(/\*\*/g, '')}
-                              </h4>
-                            );
-                          }
-                          
-                          // Key-value pairs (bold: value)
-                          if (line.includes('**') && line.includes(':')) {
-                            const match = line.match(/\*\*([^*]+)\*\*:\s*(.+)/);
-                            if (match) {
+                  if (firstLine.startsWith('##')) {
+                    const title = firstLine.replace(/^##\s*/, '').replace(/📊|🕯️|📈|⚠️|📋|🎯|🔴|🟢|🟡/g, '').trim();
+                    const icon = firstLine.match(/📊|🕯️|📈|⚠️|📋|🎯|🔴|🟢|🟡/)?.[0] || '📊';
+                    
+                    const getBgColor = () => {
+                      if (title.includes('BULLISH') || title.includes('SCENARI')) return 'from-green-900/30 to-green-800/20 border-green-700/50';
+                      if (title.includes('BEARISH')) return 'from-red-900/30 to-red-800/20 border-red-700/50';
+                      if (title.includes('OVERVIEW') || title.includes('MERCATO')) return 'from-blue-900/30 to-blue-800/20 border-blue-700/50';
+                      if (title.includes('PATTERN') || title.includes('CANDLESTICK')) return 'from-yellow-900/30 to-yellow-800/20 border-yellow-700/50';
+                      if (title.includes('VOLUME')) return 'from-purple-900/30 to-purple-800/20 border-purple-700/50';
+                      if (title.includes('LIVELLI') || title.includes('SUPPORTO')) return 'from-orange-900/30 to-orange-800/20 border-orange-700/50';
+                      return 'from-gray-800 to-gray-900 border-gray-700';
+                    };
+                    
+                    return (
+                      <div key={blockIdx} className={`bg-gradient-to-br ${getBgColor()} rounded-lg border p-4 shadow-lg`}>
+                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-700/50">
+                          <span className="text-2xl">{icon}</span>
+                          <h3 className="text-base font-bold text-white">{title}</h3>
+                        </div>
+                        
+                        <div className="space-y-2 text-xs">
+                          {lines.slice(1).map((line, lineIdx) => {
+                            if (line.startsWith('###')) {
                               return (
-                                <div key={lineIdx} className="flex items-start gap-3 p-3 bg-gray-800/40 rounded-lg">
-                                  <span className="font-bold text-yellow-400 min-w-[160px]">{match[1]}:</span>
-                                  <span className="text-gray-200 flex-1">{match[2]}</span>
+                                <div key={lineIdx} className="font-semibold text-green-400 mt-2 flex items-center gap-1">
+                                  <span>▶</span>{line.replace(/^###\s*/, '').replace(/\*\*/g, '')}
                                 </div>
                               );
                             }
-                          }
-                          
-                          // List items
-                          if (line.trim().startsWith('-')) {
-                            return (
-                              <div key={lineIdx} className="flex items-start gap-2 ml-4">
-                                <span className="text-blue-400 mt-1 font-bold">•</span>
-                                <p className="text-gray-300 flex-1">{line.replace(/^-\s*/, '').replace(/\*\*/g, '')}</p>
-                              </div>
-                            );
-                          }
-                          
-                          // Regular text
-                          if (line.trim()) {
-                            return (
-                              <p key={lineIdx} className="text-gray-300 leading-relaxed">
-                                {line.replace(/\*\*/g, '')}
-                              </p>
-                            );
-                          }
-                          
-                          return null;
-                        })}
+                            
+                            if (line.startsWith('####')) {
+                              return (
+                                <div key={lineIdx} className="font-medium text-purple-300 ml-2 flex items-center gap-1">
+                                  <span>•</span>{line.replace(/^####\s*/, '').replace(/\*\*/g, '')}
+                                </div>
+                              );
+                            }
+                            
+                            if (line.includes('**') && line.includes(':')) {
+                              const match = line.match(/\*\*([^*]+)\*\*:\s*(.+)/);
+                              if (match) {
+                                return (
+                                  <div key={lineIdx} className="flex gap-2 p-2 bg-gray-800/40 rounded">
+                                    <span className="font-bold text-yellow-400 shrink-0">{match[1]}:</span>
+                                    <span className="text-gray-200">{match[2]}</span>
+                                  </div>
+                                );
+                              }
+                            }
+                            
+                            if (line.trim().startsWith('-')) {
+                              return (
+                                <div key={lineIdx} className="flex gap-2 ml-3">
+                                  <span className="text-blue-400">•</span>
+                                  <span className="text-gray-300">{line.replace(/^-\s*/, '').replace(/\*\*/g, '')}</span>
+                                </div>
+                              );
+                            }
+                            
+                            if (line.trim()) {
+                              return (
+                                <p key={lineIdx} className="text-gray-300 leading-relaxed">
+                                  {line.replace(/\*\*/g, '')}
+                                </p>
+                              );
+                            }
+                            
+                            return null;
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  );
-                }
+                    );
+                  }
+                  
+                  return null;
+                })}
                 
-                return null;
-              })}
-              
-              {/* Warning footer */}
-              <div className="mt-6 p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-lg flex items-center gap-3">
-                <span className="text-2xl">⚠️</span>
-                <p className="text-yellow-200 text-sm">
-                  <strong>Disclaimer:</strong> Questa analisi AI è solo a scopo informativo e non costituisce consulenza finanziaria. 
-                  Fai sempre le tue ricerche prima di investire.
-                </p>
+                <div className="p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg flex gap-2 text-xs">
+                  <span className="text-xl">⚠️</span>
+                  <p className="text-yellow-200">
+                    <strong>Disclaimer:</strong> Solo a scopo informativo, non consulenza finanziaria.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
+
+            {!aiResponse && !analyzing && (
+              <div className="text-center text-gray-500 text-sm py-8">
+                <div className="text-4xl mb-2">🤖</div>
+                <div>Select an analysis or enter custom prompt</div>
+              </div>
+            )}
+
+            {analyzing && (
+              <div className="text-center text-blue-400 text-sm py-8">
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <div>Analyzing...</div>
+              </div>
+            )}
+
           </div>
-        )}
+        </div>
+
       </div>
     </div>
   );
