@@ -26,11 +26,11 @@ const SYMBOLS = [
 ];
 
 const TIMEFRAMES = [
-  { value: 'M5', label: '5 Minutes' },
-  { value: 'M15', label: '15 Minutes' },
-  { value: 'H1', label: '1 Hour' },
-  { value: 'H4', label: '4 Hours' },
-  { value: 'D1', label: '1 Day' },
+  { value: '5m', label: '5 Minutes' },
+  { value: '15m', label: '15 Minutes' },
+  { value: '1h', label: '1 Hour' },
+  { value: '4h', label: '4 Hours' },
+  { value: '1d', label: '1 Day' },
 ];
 
 const PRESET_PROMPTS = [
@@ -169,7 +169,7 @@ export default function ChartAnalyzer() {
     
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const endpoint = `${apiUrl}/api/crypto/${selectedSymbol.value}?timeframe=${selectedTimeframe.value}&limit=1000`;
+      const endpoint = `${apiUrl}/api/v1/market-data/crypto/${selectedSymbol.value}?timeframe=${selectedTimeframe.value}&limit=1000`;
       
       const response = await fetch(endpoint);
       
