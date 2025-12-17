@@ -13,7 +13,7 @@ export default function Dashboard() {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
 
-  const timeframes = ['M5', 'M15', 'H1', 'H4', 'D1'];
+  const timeframes = ['H1', 'H4', 'D1'];
   const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT'];
 
   useEffect(() => {
