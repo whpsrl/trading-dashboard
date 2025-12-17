@@ -112,27 +112,52 @@ export default function ChartAnalyzer() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const endpoint = `${apiUrl}/api/v1/market-data/${selectedSymbol.type}/${selectedSymbol.value}?timeframe=${selectedTimeframe.value}&limit=200`;
       
+      console.log('🔍 Fetching:', endpoint);
       const response = await fetch(endpoint);
-      const data = await response.json();
       
-      if (data.data && Array.isArray(data.data)) {
-        const formattedData: OHLCVData[] = data.data.map((item: any) => ({
-          time: (new Date(item.timestamp).getTime() / 1000) as UTCTimestamp,
-          open: parseFloat(item.open),
-          high: parseFloat(item.high),
-          low: parseFloat(item.low),
-          close: parseFloat(item.close),
-          volume: parseFloat(item.volume || 0),
-        }));
-        
-        setChartData(formattedData);
-        
-        if (candlestickSeriesRef.current) {
-          candlestickSeriesRef.current.setData(formattedData);
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('📦 Backend response:', data);
+      console.log('📊 Data keys:', Object.keys(data));
+      
+      // Handle different response formats
+      let ohlcvArray = data.data || data.candles || data;
+      
+      if (!Array.isArray(ohlcvArray)) {
+        console.error('❌ Data is not array:', typeof ohlcvArray);
+        throw new Error('Invalid data format from backend');
+      }
+      
+      console.log(`✅ Found ${ohlcvArray.length} candles`);
+      
+      if (ohlcvArray.length > 0) {
+        console.log('📌 First candle:', ohlcvArray[0]);
+      }
+      
+      const formattedData: OHLCVData[] = ohlcvArray.map((item: any) => ({
+        time: (new Date(item.timestamp || item.time || item[0]).getTime() / 1000) as UTCTimestamp,
+        open: parseFloat(item.open || item[1]),
+        high: parseFloat(item.high || item[2]),
+        low: parseFloat(item.low || item[3]),
+        close: parseFloat(item.close || item[4]),
+        volume: parseFloat(item.volume || item[5] || 0),
+      }));
+      
+      console.log('✨ Formatted data:', formattedData.slice(0, 2));
+      
+      setChartData(formattedData);
+      
+      if (candlestickSeriesRef.current) {
+        candlestickSeriesRef.current.setData(formattedData);
+        console.log('🎨 Chart updated with data!');
+      }
       }
     } catch (error) {
-      console.error('Error loading chart data:', error);
+      console.error('❌ Error loading chart data:', error);
+      alert(`Failed to load chart: ${error}`);
     } finally {
       setLoading(false);
     }
