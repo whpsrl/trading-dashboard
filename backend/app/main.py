@@ -1,207 +1,515 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from binance.client import Client
+from datetime import datetime
 import os
+import numpy as np
+from typing import List, Dict
+from collections import Counter
 
-# ========================
-# Importa TUTTE le route esistenti
-# ========================
+app = FastAPI(title="Trading Dashboard API - Real AI")
 
-# Market Data Router (già esiste - usa router.py)
-from app.market_data.router import router as market_data_router
-
-# AI Analysis Router (NUOVO - usa routes.py)
-from app.ai_analysis.routes import router as ai_analysis_router
-
-app = FastAPI(
-    title="Trading Dashboard API",
-    description="Real-time market data aggregation with AI-powered chart analysis",
-    version="2.0.0"
-)
-
-# ========================
-# CORS Configuration
-# ========================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://trading-dashboard-amber-seven.vercel.app",  # Your actual Vercel domain
-        "https://*.vercel.app",
-        "*"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
 
-# ========================
-# Include ALL Routers
-# ========================
+binance_client = Client()
 
-# 1. Market Data (già esistente)
-app.include_router(
-    market_data_router,
-    prefix="/api/v1/market-data",
-    tags=["📊 Market Data"]
-)
+TIMEFRAME_MAP = {
+    "M5": Client.KLINE_INTERVAL_5MINUTE,
+    "M15": Client.KLINE_INTERVAL_15MINUTE,
+    "H1": Client.KLINE_INTERVAL_1HOUR,
+    "H4": Client.KLINE_INTERVAL_4HOUR,
+    "D1": Client.KLINE_INTERVAL_1DAY
+}
 
-# 2. AI Analysis (NUOVO)
-app.include_router(
-    ai_analysis_router,
-    prefix="/api/v1/ai",
-    tags=["🤖 AI Analysis"]
-)
+# ==================== CANDLESTICK PATTERN RECOGNITION ====================
 
-# ========================
-# Root & Health Endpoints
-# ========================
+def detect_doji(candle):
+    """Doji: indecisione, body molto piccolo"""
+    body = abs(candle['close'] - candle['open'])
+    range_size = candle['high'] - candle['low']
+    return body < (range_size * 0.1), "DOJI"
+
+def detect_hammer(candle):
+    """Hammer: bullish reversal, long lower wick"""
+    body = abs(candle['close'] - candle['open'])
+    lower_wick = min(candle['open'], candle['close']) - candle['low']
+    upper_wick = candle['high'] - max(candle['open'], candle['close'])
+    
+    if lower_wick > (body * 2) and upper_wick < (body * 0.3):
+        return True, "HAMMER"
+    return False, None
+
+def detect_shooting_star(candle):
+    """Shooting Star: bearish reversal, long upper wick"""
+    body = abs(candle['close'] - candle['open'])
+    upper_wick = candle['high'] - max(candle['open'], candle['close'])
+    lower_wick = min(candle['open'], candle['close']) - candle['low']
+    
+    if upper_wick > (body * 2) and lower_wick < (body * 0.3):
+        return True, "SHOOTING_STAR"
+    return False, None
+
+def detect_engulfing(candles):
+    """Bullish/Bearish Engulfing: forte reversal"""
+    if len(candles) < 2:
+        return False, None
+    
+    prev = candles[-2]
+    curr = candles[-1]
+    
+    # Bullish Engulfing
+    if (prev['close'] < prev['open'] and 
+        curr['close'] > curr['open'] and
+        curr['open'] < prev['close'] and
+        curr['close'] > prev['open']):
+        return True, "BULLISH_ENGULFING"
+    
+    # Bearish Engulfing
+    if (prev['close'] > prev['open'] and 
+        curr['close'] < curr['open'] and
+        curr['open'] > prev['close'] and
+        curr['close'] < prev['open']):
+        return True, "BEARISH_ENGULFING"
+    
+    return False, None
+
+def detect_morning_star(candles):
+    """Morning Star: strong bullish reversal (3 candles)"""
+    if len(candles) < 3:
+        return False, None
+    
+    c1, c2, c3 = candles[-3], candles[-2], candles[-1]
+    
+    # First: long bearish
+    if c1['close'] >= c1['open']:
+        return False, None
+    
+    # Second: small body (star)
+    body2 = abs(c2['close'] - c2['open'])
+    range2 = c2['high'] - c2['low']
+    if body2 > (range2 * 0.3):
+        return False, None
+    
+    # Third: long bullish
+    if c3['close'] > c3['open'] and c3['close'] > (c1['open'] + c1['close']) / 2:
+        return True, "MORNING_STAR"
+    
+    return False, None
+
+def detect_evening_star(candles):
+    """Evening Star: strong bearish reversal (3 candles)"""
+    if len(candles) < 3:
+        return False, None
+    
+    c1, c2, c3 = candles[-3], candles[-2], candles[-1]
+    
+    # First: long bullish
+    if c1['close'] <= c1['open']:
+        return False, None
+    
+    # Second: small body (star)
+    body2 = abs(c2['close'] - c2['open'])
+    range2 = c2['high'] - c2['low']
+    if body2 > (range2 * 0.3):
+        return False, None
+    
+    # Third: long bearish
+    if c3['close'] < c3['open'] and c3['close'] < (c1['open'] + c1['close']) / 2:
+        return True, "EVENING_STAR"
+    
+    return False, None
+
+def analyze_candlestick_patterns(candles):
+    """Analizza tutti i pattern candlestick"""
+    patterns = []
+    
+    if len(candles) >= 1:
+        last = candles[-1]
+        
+        # Single candle patterns
+        is_doji, name = detect_doji(last)
+        if is_doji:
+            patterns.append({"pattern": name, "signal": "NEUTRAL", "strength": 1})
+        
+        is_hammer, name = detect_hammer(last)
+        if is_hammer:
+            patterns.append({"pattern": name, "signal": "BULLISH", "strength": 3})
+        
+        is_star, name = detect_shooting_star(last)
+        if is_star:
+            patterns.append({"pattern": name, "signal": "BEARISH", "strength": 3})
+    
+    if len(candles) >= 2:
+        # Two candle patterns
+        is_engulf, name = detect_engulfing(candles)
+        if is_engulf:
+            signal = "BULLISH" if "BULLISH" in name else "BEARISH"
+            patterns.append({"pattern": name, "signal": signal, "strength": 4})
+    
+    if len(candles) >= 3:
+        # Three candle patterns
+        is_morning, name = detect_morning_star(candles)
+        if is_morning:
+            patterns.append({"pattern": name, "signal": "BULLISH", "strength": 5})
+        
+        is_evening, name = detect_evening_star(candles)
+        if is_evening:
+            patterns.append({"pattern": name, "signal": "BEARISH", "strength": 5})
+    
+    return patterns
+
+# ==================== CHART PATTERN RECOGNITION ====================
+
+def detect_support_resistance(candles, window=20):
+    """Identifica livelli di supporto/resistenza"""
+    closes = [c['close'] for c in candles[-window:]]
+    highs = [c['high'] for c in candles[-window:]]
+    lows = [c['low'] for c in candles[-window:]]
+    
+    # Cluster di prezzi (resistance/support zones)
+    price_clusters = {}
+    for price in highs + lows:
+        rounded = round(price / (price * 0.01)) * (price * 0.01)  # 1% clustering
+        price_clusters[rounded] = price_clusters.get(rounded, 0) + 1
+    
+    # Top 3 livelli
+    sorted_levels = sorted(price_clusters.items(), key=lambda x: x[1], reverse=True)[:3]
+    
+    current_price = candles[-1]['close']
+    levels = []
+    
+    for level, count in sorted_levels:
+        if level > current_price:
+            levels.append({"type": "RESISTANCE", "price": level, "touches": count})
+        else:
+            levels.append({"type": "SUPPORT", "price": level, "touches": count})
+    
+    return levels
+
+def detect_triangle_pattern(candles, lookback=50):
+    """Rileva pattern triangolo (ascending/descending/symmetrical)"""
+    if len(candles) < lookback:
+        return None
+    
+    recent = candles[-lookback:]
+    highs = [c['high'] for c in recent]
+    lows = [c['low'] for c in recent]
+    
+    # Trend delle highs e lows
+    high_slope = np.polyfit(range(len(highs)), highs, 1)[0]
+    low_slope = np.polyfit(range(len(lows)), lows, 1)[0]
+    
+    # Ascending Triangle
+    if abs(high_slope) < 0.1 and low_slope > 0.1:
+        return {"pattern": "ASCENDING_TRIANGLE", "signal": "BULLISH", "strength": 4}
+    
+    # Descending Triangle
+    if abs(low_slope) < 0.1 and high_slope < -0.1:
+        return {"pattern": "DESCENDING_TRIANGLE", "signal": "BEARISH", "strength": 4}
+    
+    # Symmetrical Triangle
+    if high_slope < -0.1 and low_slope > 0.1:
+        return {"pattern": "SYMMETRICAL_TRIANGLE", "signal": "NEUTRAL", "strength": 2}
+    
+    return None
+
+def detect_double_top_bottom(candles, lookback=30, tolerance=0.02):
+    """Rileva double top/bottom"""
+    if len(candles) < lookback:
+        return None
+    
+    recent = candles[-lookback:]
+    highs = [c['high'] for c in recent]
+    lows = [c['low'] for c in recent]
+    
+    # Find peaks and troughs
+    peaks = []
+    troughs = []
+    
+    for i in range(2, len(recent)-2):
+        # Peak
+        if highs[i] > highs[i-1] and highs[i] > highs[i-2] and highs[i] > highs[i+1] and highs[i] > highs[i+2]:
+            peaks.append((i, highs[i]))
+        # Trough
+        if lows[i] < lows[i-1] and lows[i] < lows[i-2] and lows[i] < lows[i+1] and lows[i] < lows[i+2]:
+            troughs.append((i, lows[i]))
+    
+    # Double Top
+    if len(peaks) >= 2:
+        last_two_peaks = peaks[-2:]
+        if abs(last_two_peaks[0][1] - last_two_peaks[1][1]) / last_two_peaks[0][1] < tolerance:
+            return {"pattern": "DOUBLE_TOP", "signal": "BEARISH", "strength": 5}
+    
+    # Double Bottom
+    if len(troughs) >= 2:
+        last_two_troughs = troughs[-2:]
+        if abs(last_two_troughs[0][1] - last_two_troughs[1][1]) / last_two_troughs[0][1] < tolerance:
+            return {"pattern": "DOUBLE_BOTTOM", "signal": "BULLISH", "strength": 5}
+    
+    return None
+
+# ==================== MACHINE LEARNING PREDICTION ====================
+
+def calculate_features(candles):
+    """Estrae features per ML model"""
+    closes = np.array([c['close'] for c in candles])
+    highs = np.array([c['high'] for c in candles])
+    lows = np.array([c['low'] for c in candles])
+    volumes = np.array([c['volume'] for c in candles])
+    
+    features = {}
+    
+    # Price features
+    features['price_change_5'] = (closes[-1] - closes[-5]) / closes[-5] if len(closes) >= 5 else 0
+    features['price_change_10'] = (closes[-1] - closes[-10]) / closes[-10] if len(closes) >= 10 else 0
+    features['price_change_20'] = (closes[-1] - closes[-20]) / closes[-20] if len(closes) >= 20 else 0
+    
+    # Volatility
+    if len(closes) >= 10:
+        features['volatility'] = np.std(closes[-10:]) / np.mean(closes[-10:])
+    else:
+        features['volatility'] = 0
+    
+    # Range
+    features['current_range'] = (highs[-1] - lows[-1]) / closes[-1]
+    
+    # Volume trend
+    if len(volumes) >= 5:
+        features['volume_trend'] = (volumes[-1] - np.mean(volumes[-5:])) / np.mean(volumes[-5:])
+    else:
+        features['volume_trend'] = 0
+    
+    # Moving averages
+    if len(closes) >= 20:
+        features['sma_20'] = np.mean(closes[-20:])
+        features['distance_from_sma20'] = (closes[-1] - features['sma_20']) / features['sma_20']
+    else:
+        features['distance_from_sma20'] = 0
+    
+    # Momentum
+    if len(closes) >= 10:
+        features['momentum'] = closes[-1] - closes[-10]
+    else:
+        features['momentum'] = 0
+    
+    return features
+
+def simple_ml_prediction(features):
+    """
+    Semplice ML model basato su feature weighting
+    In produzione: sostituisci con sklearn RandomForest/XGBoost trained model
+    """
+    score = 0
+    
+    # Price momentum
+    if features['price_change_5'] > 0.02:
+        score += 2
+    elif features['price_change_5'] < -0.02:
+        score -= 2
+    
+    # Medium term trend
+    if features['price_change_20'] > 0.05:
+        score += 2
+    elif features['price_change_20'] < -0.05:
+        score -= 2
+    
+    # Distance from MA
+    if features['distance_from_sma20'] > 0.03:
+        score += 1
+    elif features['distance_from_sma20'] < -0.03:
+        score -= 1
+    
+    # Volume confirmation
+    if features['volume_trend'] > 0.2:
+        score += 1
+    elif features['volume_trend'] < -0.2:
+        score -= 1
+    
+    # Volatility (high vol = uncertain)
+    if features['volatility'] > 0.05:
+        score = int(score * 0.7)  # Reduce confidence in high volatility
+    
+    return score
+
+# ==================== UNIFIED AI PREDICTION ====================
+
+def ai_predict(candles):
+    """
+    Unified AI prediction combining:
+    1. Candlestick patterns
+    2. Chart patterns
+    3. ML features
+    4. Price action
+    """
+    
+    # 1. Candlestick Patterns
+    candle_patterns = analyze_candlestick_patterns(candles)
+    
+    # 2. Chart Patterns
+    chart_patterns = []
+    
+    triangle = detect_triangle_pattern(candles)
+    if triangle:
+        chart_patterns.append(triangle)
+    
+    double = detect_double_top_bottom(candles)
+    if double:
+        chart_patterns.append(double)
+    
+    # 3. Support/Resistance
+    levels = detect_support_resistance(candles)
+    
+    # 4. ML Features
+    features = calculate_features(candles)
+    ml_score = simple_ml_prediction(features)
+    
+    # ==================== SCORING SYSTEM ====================
+    
+    total_score = ml_score  # Base da ML
+    detected_patterns = []
+    
+    # Add candlestick patterns
+    for pattern in candle_patterns:
+        detected_patterns.append(pattern['pattern'])
+        if pattern['signal'] == 'BULLISH':
+            total_score += pattern['strength']
+        elif pattern['signal'] == 'BEARISH':
+            total_score -= pattern['strength']
+    
+    # Add chart patterns
+    for pattern in chart_patterns:
+        detected_patterns.append(pattern['pattern'])
+        if pattern['signal'] == 'BULLISH':
+            total_score += pattern['strength']
+        elif pattern['signal'] == 'BEARISH':
+            total_score -= pattern['strength']
+    
+    # Support/Resistance breakout
+    current_price = candles[-1]['close']
+    for level in levels:
+        if level['type'] == 'RESISTANCE' and current_price > level['price'] * 0.998:
+            total_score += 2
+            detected_patterns.append("RESISTANCE_BREAKOUT")
+        elif level['type'] == 'SUPPORT' and current_price < level['price'] * 1.002:
+            total_score -= 2
+            detected_patterns.append("SUPPORT_BREAKDOWN")
+    
+    # ==================== FINAL DECISION ====================
+    
+    if total_score >= 3:
+        direction = "UP"
+        confidence = min(total_score * 10 + 50, 95)
+    elif total_score <= -3:
+        direction = "DOWN"
+        confidence = min(abs(total_score) * 10 + 50, 95)
+    else:
+        direction = "NEUTRAL"
+        confidence = 45
+    
+    return {
+        "direction": direction,
+        "confidence": round(confidence, 1),
+        "score": total_score,
+        "ml_score": ml_score,
+        "patterns_detected": detected_patterns,
+        "candlestick_patterns": candle_patterns,
+        "chart_patterns": chart_patterns,
+        "support_resistance": levels,
+        "features": {
+            "price_momentum_5": round(features['price_change_5'] * 100, 2),
+            "price_momentum_20": round(features['price_change_20'] * 100, 2),
+            "volatility": round(features['volatility'] * 100, 2),
+            "volume_trend": round(features['volume_trend'] * 100, 2)
+        }
+    }
+
+# ==================== API ENDPOINTS ====================
 
 @app.get("/")
 async def root():
-    """
-    Welcome endpoint - mostra info API
-    """
-    return {
-        "name": "Trading Dashboard API",
-        "status": "🟢 online",
-        "version": "2.0.0",
-        "features": [
-            "Real-time market data aggregation (Binance, OANDA, Finnhub)",
-            "AI-powered chart analysis", 
-            "Multi-market support (Crypto, Forex, Stocks)"
-        ],
-        "endpoints": {
-            "documentation": "/docs",
-            "health": "/api/v1/health",
-            "market_data": "/api/v1/market-data",
-            "ai_analyze": "/api/v1/ai/analyze",
-            "ai_health": "/api/v1/ai/health"
-        }
-    }
-
-@app.get("/api/v1/health")
-async def health_check():
-    """
-    Health check generale - verifica status di tutti i servizi
-    """
-    anthropic_configured = bool(os.getenv("ANTHROPIC_API_KEY"))
-    
     return {
         "status": "online",
-        "timestamp": os.environ.get("RAILWAY_DEPLOYMENT_ID", "local"),
-        "services": {
-            "api": "🟢 online",
-            "ai": "🟢 online" if anthropic_configured else "🔴 not configured",
-            "market_data": "🟢 online",
-            "database": "🟢 connected",
-            "redis": "🟢 connected"
-        }
+        "service": "Trading Dashboard - Real AI",
+        "version": "4.0",
+        "features": [
+            "Candlestick Pattern Recognition",
+            "Chart Pattern Detection",
+            "Machine Learning Prediction",
+            "Support/Resistance Analysis",
+            "Multi-timeframe Analysis"
+        ]
     }
 
-@app.get("/api/v1/status")
-async def detailed_status():
-    """
-    Status dettagliato con configurazione environment
-    """
-    return {
-        "api": {
-            "status": "online",
-            "version": "2.0.0",
-            "environment": os.getenv("RAILWAY_ENVIRONMENT", "local")
-        },
-        "configuration": {
-            "anthropic_api_key": "✅ configured" if os.getenv("ANTHROPIC_API_KEY") else "❌ missing",
-            "cors_enabled": True,
-            "port": os.getenv("PORT", "8000")
-        },
-        "available_endpoints": {
-            "market_data": {
-                "crypto": "/api/v1/market-data/crypto/{symbol}",
-                "forex": "/api/v1/market-data/forex/{symbol}",
-                "stock": "/api/v1/market-data/stock/{symbol}"
-            },
-            "ai": {
-                "analyze": "/api/v1/ai/analyze",
-                "health": "/api/v1/ai/health"
-            },
-            "system": {
-                "health": "/api/v1/health",
-                "status": "/api/v1/status",
-                "docs": "/docs"
-            }
+@app.get("/api/crypto/{symbol}")
+async def get_crypto_data(
+    symbol: str = "BTCUSDT",
+    timeframe: str = "H1",
+    limit: int = 100
+):
+    """Get crypto data with Real AI prediction"""
+    try:
+        if timeframe not in TIMEFRAME_MAP:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid timeframe. Use: {', '.join(TIMEFRAME_MAP.keys())}"
+            )
+        
+        interval = TIMEFRAME_MAP[timeframe]
+        
+        klines = binance_client.get_klines(
+            symbol=symbol.upper(),
+            interval=interval,
+            limit=limit
+        )
+        
+        candles = []
+        for k in klines:
+            candles.append({
+                "time": int(k[0] / 1000),
+                "open": float(k[1]),
+                "high": float(k[2]),
+                "low": float(k[3]),
+                "close": float(k[4]),
+                "volume": float(k[5])
+            })
+        
+        current_price = float(klines[-1][4])
+        
+        # Real AI Prediction
+        prediction = ai_predict(candles)
+        
+        return {
+            "symbol": symbol.upper(),
+            "timeframe": timeframe,
+            "current_price": current_price,
+            "data": candles,
+            "count": len(candles),
+            "ai_prediction": prediction
         }
-    }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# ========================
-# Startup/Shutdown Events
-# ========================
-
-@app.on_event("startup")
-async def startup_event():
-    """
-    Eseguito all'avvio dell'applicazione
-    """
-    print("\n" + "="*60)
-    print("🚀 Trading Dashboard API - STARTED")
-    print("="*60)
-    print(f"📍 Environment: {os.getenv('RAILWAY_ENVIRONMENT', 'local')}")
-    print(f"🔑 Anthropic API: {'✅ Configured' if os.getenv('ANTHROPIC_API_KEY') else '❌ Missing'}")
-    print(f"🌐 Port: {os.getenv('PORT', '8000')}")
-    print("\n📚 Available Endpoints:")
-    print("   → Market Data:  /api/v1/market-data")
-    print("   → AI Analysis:  /api/v1/ai/analyze")
-    print("   → AI Health:    /api/v1/ai/health")
-    print("   → API Docs:     /docs")
-    print("   → Health Check: /api/v1/health")
-    print("="*60 + "\n")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """
-    Eseguito allo shutdown dell'applicazione
-    """
-    print("\n" + "="*60)
-    print("👋 Trading Dashboard API - SHUTTING DOWN")
-    print("="*60 + "\n")
-
-# ========================
-# Exception Handlers
-# ========================
-
-from fastapi import Request
-from fastapi.responses import JSONResponse
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """
-    Handler globale per tutte le eccezioni non gestite
-    """
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": "Internal Server Error",
-            "message": str(exc),
-            "path": str(request.url)
+@app.get("/api/price/{symbol}")
+async def get_current_price(symbol: str = "BTCUSDT"):
+    """Get current price"""
+    try:
+        ticker = binance_client.get_symbol_ticker(symbol=symbol.upper())
+        return {
+            "symbol": symbol.upper(),
+            "price": float(ticker['price']),
+            "timestamp": datetime.now().isoformat()
         }
-    )
-
-# ========================
-# Run Application (local)
-# ========================
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
-    
-    # Porta da environment o default 8000
     port = int(os.getenv("PORT", 8000))
-    
-    # Configurazione uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=port,
-        reload=True,          # Auto-reload per development
-        log_level="info"
-    )
+    uvicorn.run(app, host="0.0.0.0", port=port)

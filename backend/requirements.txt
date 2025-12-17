@@ -1,37 +1,7 @@
-# FastAPI Framework
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-pydantic>=2.4.0
-pydantic-settings>=2.0.0
-
-# Database
-sqlalchemy>=2.0.0
-alembic>=1.12.0
-psycopg2-binary>=2.9.9
-
-# Redis Cache
-redis>=5.0.0
-
-# CORS
-python-multipart>=0.0.6
-
-# Security
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
-python-dotenv>=1.0.0
-
-# Market Data - Crypto
-ccxt>=4.0.0
-
-# Market Data - Stocks/Forex/Commodities  
-yfinance>=0.2.32
-requests>=2.31.0
-
-# Anthropic AI (optional - for AI analysis)
-anthropic>=0.40.0
-
-# Utilities
-httpx>=0.25.0
-aiohttp>=3.9.0
-pandas>=2.1.0
-numpy>=1.26.0
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-binance==1.0.19
+python-dotenv==1.0.0
+psycopg2-binary==2.9.9
+redis==5.0.1
+numpy==1.26.2
