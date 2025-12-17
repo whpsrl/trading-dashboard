@@ -4,10 +4,11 @@ from binance.client import Client
 from datetime import datetime
 import os
 import numpy as np
-from typing import List, Dict
+from typing import List, Dict, Optional
 from collections import Counter
+from pydantic import BaseModel
 
-app = FastAPI(title="Trading Dashboard API - Real AI")
+app = FastAPI(title="Trading Dashboard API - Multi Source")
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,15 +18,101 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ==================== DATA SOURCES SETUP ====================
+
+# Binance client
 binance_client = Client()
 
-TIMEFRAME_MAP = {
+# MT5 client (will be initialized on login)
+mt5_client = None
+mt5_connected = False
+
+# Try to import MT5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    MT5_AVAILABLE = False
+    print("⚠️ MetaTrader5 package not installed. MT5 features disabled.")
+
+TIMEFRAME_MAP_BINANCE = {
     "M5": Client.KLINE_INTERVAL_5MINUTE,
     "M15": Client.KLINE_INTERVAL_15MINUTE,
     "H1": Client.KLINE_INTERVAL_1HOUR,
     "H4": Client.KLINE_INTERVAL_4HOUR,
     "D1": Client.KLINE_INTERVAL_1DAY
 }
+
+TIMEFRAME_MAP_MT5 = {
+    "M5": 5,   # mt5.TIMEFRAME_M5
+    "M15": 15, # mt5.TIMEFRAME_M15
+    "H1": 16385,  # mt5.TIMEFRAME_H1
+    "H4": 16388,  # mt5.TIMEFRAME_H4
+    "D1": 16408,  # mt5.TIMEFRAME_D1
+} if MT5_AVAILABLE else {}
+
+class MT5LoginRequest(BaseModel):
+    account: int
+    password: str
+    server: str
+
+def get_mt5_data(symbol: str, timeframe: str, limit: int = 100):
+    """Get data from MT5"""
+    global mt5_connected
+    
+    if not MT5_AVAILABLE:
+        raise HTTPException(status_code=503, detail="MT5 not available")
+    
+    if not mt5_connected:
+        raise HTTPException(status_code=401, detail="MT5 not connected. Please login first.")
+    
+    tf = TIMEFRAME_MAP_MT5.get(timeframe)
+    if not tf:
+        raise HTTPException(status_code=400, detail=f"Invalid timeframe for MT5: {timeframe}")
+    
+    # Get rates
+    rates = mt5.copy_rates_from_pos(symbol, tf, 0, limit)
+    
+    if rates is None or len(rates) == 0:
+        raise HTTPException(status_code=404, detail=f"No data for {symbol}")
+    
+    candles = []
+    for rate in rates:
+        candles.append({
+            "time": int(rate['time']),
+            "open": float(rate['open']),
+            "high": float(rate['high']),
+            "low": float(rate['low']),
+            "close": float(rate['close']),
+            "volume": float(rate['tick_volume'])
+        })
+    
+    return candles
+
+def get_binance_data(symbol: str, timeframe: str, limit: int = 100):
+    """Get data from Binance"""
+    interval = TIMEFRAME_MAP_BINANCE.get(timeframe)
+    if not interval:
+        raise HTTPException(status_code=400, detail=f"Invalid timeframe for Binance: {timeframe}")
+    
+    klines = binance_client.get_klines(
+        symbol=symbol.upper(),
+        interval=interval,
+        limit=limit
+    )
+    
+    candles = []
+    for k in klines:
+        candles.append({
+            "time": int(k[0] / 1000),
+            "open": float(k[1]),
+            "high": float(k[2]),
+            "low": float(k[3]),
+            "close": float(k[4]),
+            "volume": float(k[5])
+        })
+    
+    return candles
 
 # ==================== CANDLESTICK PATTERN RECOGNITION ====================
 
@@ -435,51 +522,42 @@ def ai_predict(candles):
 async def root():
     return {
         "status": "online",
-        "service": "Trading Dashboard - Real AI",
-        "version": "4.0",
+        "service": "Trading Dashboard - Multi Source",
+        "version": "5.0",
+        "sources": {
+            "binance": "available",
+            "mt5": "available" if MT5_AVAILABLE else "not installed",
+            "mt5_connected": mt5_connected
+        },
         "features": [
+            "Multi-source data (Binance + MT5)",
             "Candlestick Pattern Recognition",
             "Chart Pattern Detection",
             "Machine Learning Prediction",
-            "Support/Resistance Analysis",
-            "Multi-timeframe Analysis"
+            "Support/Resistance Analysis"
         ]
     }
 
-@app.get("/api/crypto/{symbol}")
-async def get_crypto_data(
+@app.get("/api/data/{symbol}")
+async def get_market_data(
     symbol: str = "BTCUSDT",
     timeframe: str = "H1",
-    limit: int = 100
+    limit: int = 100,
+    source: str = "binance"
 ):
-    """Get crypto data with Real AI prediction"""
+    """
+    Get market data from multiple sources
+    
+    source: 'binance' or 'mt5'
+    """
     try:
-        if timeframe not in TIMEFRAME_MAP:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid timeframe. Use: {', '.join(TIMEFRAME_MAP.keys())}"
-            )
+        # Fetch data based on source
+        if source == "mt5":
+            candles = get_mt5_data(symbol, timeframe, limit)
+        else:  # default binance
+            candles = get_binance_data(symbol, timeframe, limit)
         
-        interval = TIMEFRAME_MAP[timeframe]
-        
-        klines = binance_client.get_klines(
-            symbol=symbol.upper(),
-            interval=interval,
-            limit=limit
-        )
-        
-        candles = []
-        for k in klines:
-            candles.append({
-                "time": int(k[0] / 1000),
-                "open": float(k[1]),
-                "high": float(k[2]),
-                "low": float(k[3]),
-                "close": float(k[4]),
-                "volume": float(k[5])
-            })
-        
-        current_price = float(klines[-1][4])
+        current_price = candles[-1]['close']
         
         # Real AI Prediction - with fallback
         try:
@@ -505,6 +583,7 @@ async def get_crypto_data(
         
         return {
             "symbol": symbol.upper(),
+            "source": source,
             "timeframe": timeframe,
             "current_price": current_price,
             "data": candles,
@@ -514,6 +593,16 @@ async def get_crypto_data(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Keep old endpoint for backward compatibility
+@app.get("/api/crypto/{symbol}")
+async def get_crypto_data(
+    symbol: str = "BTCUSDT",
+    timeframe: str = "H1",
+    limit: int = 100
+):
+    """Legacy endpoint - uses Binance"""
+    return await get_market_data(symbol, timeframe, limit, "binance")
 
 @app.get("/api/price/{symbol}")
 async def get_current_price(symbol: str = "BTCUSDT"):
@@ -624,6 +713,104 @@ Return ONLY JSON (no markdown):
         return {"success": False, "lines": [], "message": "anthropic package required"}
     except Exception as e:
         return {"success": False, "lines": [], "message": str(e)}
+
+@app.post("/api/mt5/login")
+async def mt5_login(request: MT5LoginRequest):
+    """Login to MT5"""
+    global mt5_connected
+    
+    if not MT5_AVAILABLE:
+        return {"success": False, "message": "MT5 package not installed"}
+    
+    try:
+        # Initialize MT5
+        if not mt5.initialize():
+            return {"success": False, "message": "MT5 initialize() failed"}
+        
+        # Login
+        authorized = mt5.login(request.account, request.password, request.server)
+        
+        if authorized:
+            mt5_connected = True
+            account_info = mt5.account_info()
+            return {
+                "success": True,
+                "message": "Connected to MT5",
+                "account": {
+                    "login": account_info.login,
+                    "server": account_info.server,
+                    "balance": account_info.balance,
+                    "currency": account_info.currency
+                }
+            }
+        else:
+            return {"success": False, "message": "MT5 login failed. Check credentials."}
+            
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+@app.get("/api/mt5/symbols")
+async def get_mt5_symbols():
+    """Get available MT5 symbols"""
+    global mt5_connected
+    
+    if not MT5_AVAILABLE:
+        return {"success": False, "symbols": [], "message": "MT5 not available"}
+    
+    if not mt5_connected:
+        return {"success": False, "symbols": [], "message": "MT5 not connected"}
+    
+    try:
+        symbols = mt5.symbols_get()
+        if symbols is None:
+            return {"success": False, "symbols": [], "message": "Failed to get symbols"}
+        
+        # Common instruments only
+        common = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", 
+                  "XAUUSD", "XAGUSD", "US30", "US500", "BTCUSD", "ETHUSD"]
+        
+        symbol_list = []
+        for s in symbols:
+            if any(c in s.name for c in common):
+                symbol_list.append({
+                    "symbol": s.name,
+                    "description": s.description,
+                    "digits": s.digits
+                })
+        
+        return {
+            "success": True,
+            "symbols": symbol_list[:50],  # Limit to 50
+            "count": len(symbol_list)
+        }
+        
+    except Exception as e:
+        return {"success": False, "symbols": [], "message": str(e)}
+
+@app.get("/api/instruments/{source}")
+async def get_instruments(source: str):
+    """Get available instruments for a data source"""
+    if source == "binance":
+        return {
+            "success": True,
+            "source": "binance",
+            "instruments": [
+                {"symbol": "BTCUSDT", "name": "Bitcoin"},
+                {"symbol": "ETHUSDT", "name": "Ethereum"},
+                {"symbol": "BNBUSDT", "name": "Binance Coin"},
+                {"symbol": "SOLUSDT", "name": "Solana"},
+                {"symbol": "XRPUSDT", "name": "Ripple"},
+                {"symbol": "ADAUSDT", "name": "Cardano"},
+                {"symbol": "DOGEUSDT", "name": "Dogecoin"},
+                {"symbol": "MATICUSDT", "name": "Polygon"},
+                {"symbol": "DOTUSDT", "name": "Polkadot"},
+                {"symbol": "LINKUSDT", "name": "Chainlink"}
+            ]
+        }
+    elif source == "mt5":
+        return await get_mt5_symbols()
+    else:
+        return {"success": False, "message": "Invalid source"}
 
 if __name__ == "__main__":
     import uvicorn
