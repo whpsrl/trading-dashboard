@@ -24,15 +24,16 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",                    # Local dev
-        "http://localhost:3001",                    # Alternative local
-        "https://*.vercel.app",                     # Vercel preview & production
-        "https://trading-dashboard.vercel.app",     # Your Vercel domain (modifica)
-        "*"                                          # Allow all per sviluppo
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://trading-dashboard-amber-seven.vercel.app",  # Your actual Vercel domain
+        "https://*.vercel.app",
+        "*"
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # ========================
