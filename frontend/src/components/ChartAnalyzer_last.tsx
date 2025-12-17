@@ -26,6 +26,8 @@ const SYMBOLS = [
 ];
 
 const TIMEFRAMES = [
+  { value: 'M5', label: '5 Minutes' },
+  { value: 'M15', label: '15 Minutes' },
   { value: 'H1', label: '1 Hour' },
   { value: 'H4', label: '4 Hours' },
   { value: 'D1', label: '1 Day' },
@@ -49,6 +51,11 @@ export default function ChartAnalyzer() {
   const [analyzing, setAnalyzing] = useState(false);
   const [drawnLines, setDrawnLines] = useState<any[]>([]);
   const [autoDrawing, setAutoDrawing] = useState(false);
+  
+  // Dynamic symbol list
+  const [availableSymbols, setAvailableSymbols] = useState(SYMBOLS);
+  const [symbolSearch, setSymbolSearch] = useState('');
+  const [filteredSymbols, setFilteredSymbols] = useState(SYMBOLS);
   
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -114,6 +121,21 @@ export default function ChartAnalyzer() {
   useEffect(() => {
     loadChartData();
   }, [selectedSymbol, selectedTimeframe]);
+
+  // Filter symbols based on search
+  useEffect(() => {
+    if (symbolSearch.trim() === '') {
+      setFilteredSymbols(availableSymbols);
+    } else {
+      const search = symbolSearch.toLowerCase();
+      setFilteredSymbols(
+        availableSymbols.filter(s => 
+          s.value.toLowerCase().includes(search) || 
+          s.label.toLowerCase().includes(search)
+        )
+      );
+    }
+  }, [symbolSearch, availableSymbols]);
 
   const loadChartData = async () => {
     setLoading(true);
@@ -352,18 +374,35 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
             WebkitTextFillColor: 'transparent'
           }}>Chart Analyzer</h1>
           
+          <input
+            type="text"
+            placeholder="🔍 Search symbol..."
+            value={symbolSearch}
+            onChange={(e) => setSymbolSearch(e.target.value)}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#1e293b',
+              color: 'white',
+              borderRadius: '0.5rem',
+              border: '1px solid #475569',
+              fontSize: '0.875rem',
+              width: '150px'
+            }}
+          />
+          
           <select
             value={selectedSymbol.value}
-            onChange={(e) => setSelectedSymbol(SYMBOLS.find(s => s.value === e.target.value)!)}
+            onChange={(e) => setSelectedSymbol(filteredSymbols.find(s => s.value === e.target.value)!)}
             style={{
               padding: '0.5rem 1rem',
               backgroundColor: '#334155',
               color: 'white',
               borderRadius: '0.5rem',
-              border: '1px solid #2563eb'
+              border: '1px solid #2563eb',
+              maxWidth: '200px'
             }}
           >
-            {SYMBOLS.map((sym) => (
+            {filteredSymbols.map((sym) => (
               <option key={sym.value} value={sym.value}>{sym.label}</option>
             ))}
           </select>

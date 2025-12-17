@@ -137,6 +137,32 @@ export default function ChartAnalyzer() {
     }
   }, [symbolSearch, availableSymbols]);
 
+  // Load all available symbols from Binance on mount
+  useEffect(() => {
+    const loadAllSymbols = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${apiUrl}/api/instruments/binance`);
+        const data = await response.json();
+        
+        if (data.success && data.instruments) {
+          const symbols = data.instruments.map((inst: any) => ({
+            value: inst.symbol,
+            label: inst.name,
+            type: 'crypto'
+          }));
+          setAvailableSymbols(symbols);
+          setFilteredSymbols(symbols);
+        }
+      } catch (error) {
+        console.error('Failed to load symbols:', error);
+        // Keep default hardcoded list if API fails
+      }
+    };
+    
+    loadAllSymbols();
+  }, []);
+
   const loadChartData = async () => {
     setLoading(true);
     setError('');
