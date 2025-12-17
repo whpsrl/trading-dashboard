@@ -128,12 +128,16 @@ export default function ChartAnalyzer() {
       setFilteredSymbols(availableSymbols);
     } else {
       const search = symbolSearch.toLowerCase();
-      setFilteredSymbols(
-        availableSymbols.filter(s => 
-          s.value.toLowerCase().includes(search) || 
-          s.label.toLowerCase().includes(search)
-        )
+      const filtered = availableSymbols.filter(s => 
+        s.value.toLowerCase().includes(search) || 
+        s.label.toLowerCase().includes(search)
       );
+      setFilteredSymbols(filtered);
+      
+      // If current selected symbol is not in filtered list, select first filtered
+      if (filtered.length > 0 && !filtered.find(s => s.value === selectedSymbol.value)) {
+        setSelectedSymbol(filtered[0]);
+      }
     }
   }, [symbolSearch, availableSymbols]);
 
