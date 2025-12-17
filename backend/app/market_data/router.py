@@ -212,14 +212,18 @@ async def get_crypto_data(
     timeframe: str = Query("1h", description="Timeframe"),
     limit: int = Query(100, description="Number of candles")
 ):
-    """Get crypto OHLCV data - frontend compatible"""
-    return await get_ohlcv(
-        symbol=symbol,
-        timeframe=timeframe,
-        limit=limit,
-        asset_type="crypto",
-        exchange="binance"
-    )
+    """Get crypto OHLCV data - frontend compatible (Binance direct)"""
+    # Force Binance direct for crypto (skip intraday service issues)
+    try:
+        ohlcv_data = await market_service.get_ohlcv(
+            symbol=symbol,
+            timeframe=timeframe if timeframe != "15m" else "1h",  # Fallback 15m to 1h
+            limit=limit,
+            exchange="binance"
+        )
+        return ohlcv_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/forex/{symbol}")
