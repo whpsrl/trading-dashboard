@@ -110,6 +110,11 @@ export default function ChartAnalyzer() {
     };
   }, []);
 
+  // Load chart data when symbol or timeframe changes
+  useEffect(() => {
+    loadChartData();
+  }, [selectedSymbol, selectedTimeframe]);
+
   const loadChartData = async () => {
     setLoading(true);
     setError('');
