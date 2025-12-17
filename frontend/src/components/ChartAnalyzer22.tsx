@@ -422,93 +422,27 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
             🤖 AI Analysis
           </h2>
           
-          {/* Drawing Tools */}
-          <div style={{ marginBottom: '1rem' }}>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: '600' }}>
-              AI DRAWING TOOLS
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <button
-                onClick={() => autoDrawLines('support_resistance')}
-                disabled={autoDrawing || !chartData.length}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 1rem',
-                  background: 'linear-gradient(to right, #10b981, #059669)',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.8rem',
-                  fontWeight: '600',
-                  textAlign: 'left',
-                  cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
-                  opacity: (autoDrawing || !chartData.length) ? 0.5 : 1,
-                  border: 'none'
-                }}
-              >
-                📏 Support & Resistance
-              </button>
-              
-              <button
-                onClick={() => autoDrawLines('trendlines')}
-                disabled={autoDrawing || !chartData.length}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 1rem',
-                  background: 'linear-gradient(to right, #3b82f6, #2563eb)',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.8rem',
-                  fontWeight: '600',
-                  textAlign: 'left',
-                  cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
-                  opacity: (autoDrawing || !chartData.length) ? 0.5 : 1,
-                  border: 'none'
-                }}
-              >
-                📐 Trendlines
-              </button>
-              
-              <button
-                onClick={() => autoDrawLines('imbalances')}
-                disabled={autoDrawing || !chartData.length}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 1rem',
-                  background: 'linear-gradient(to right, #f59e0b, #d97706)',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.8rem',
-                  fontWeight: '600',
-                  textAlign: 'left',
-                  cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
-                  opacity: (autoDrawing || !chartData.length) ? 0.5 : 1,
-                  border: 'none'
-                }}
-              >
-                🟢 Imbalance Zones (FVG)
-              </button>
-              
-              <button
-                onClick={() => autoDrawLines('consolidations')}
-                disabled={autoDrawing || !chartData.length}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 1rem',
-                  background: 'linear-gradient(to right, #8b5cf6, #7c3aed)',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.8rem',
-                  fontWeight: '600',
-                  textAlign: 'left',
-                  cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
-                  opacity: (autoDrawing || !chartData.length) ? 0.5 : 1,
-                  border: 'none'
-                }}
-              >
-                📊 Consolidation Zones
-              </button>
-            </div>
-          </div>
+          {/* Auto-Draw Button */}
+          <button
+            onClick={autoDrawLines}
+            disabled={autoDrawing || !chartData.length}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              marginBottom: '1rem',
+              background: 'linear-gradient(to right, #8b5cf6, #3b82f6)',
+              color: 'white',
+              borderRadius: '0.75rem',
+              fontSize: '0.875rem',
+              fontWeight: '700',
+              textAlign: 'center',
+              cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
+              opacity: (autoDrawing || !chartData.length) ? 0.5 : 1,
+              border: 'none'
+            }}
+          >
+            {autoDrawing ? '⏳ Drawing...' : '✨ AI Auto-Draw'}
+          </button>
 
           {drawnLines.length > 0 && (
             <div style={{ 
@@ -517,15 +451,13 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
               backgroundColor: 'rgba(34, 197, 94, 0.1)',
               borderRadius: '0.5rem',
               fontSize: '0.75rem',
-              color: '#4ade80',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
+              color: '#4ade80'
             }}>
-              <span>✓ {drawnLines.length} lines drawn</span>
+              ✓ {drawnLines.length} lines drawn
               <button
                 onClick={clearAllLines}
                 style={{
+                  marginLeft: '0.5rem',
                   padding: '0.25rem 0.5rem',
                   backgroundColor: 'rgba(239, 68, 68, 0.2)',
                   color: '#f87171',
@@ -535,14 +467,10 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                   cursor: 'pointer'
                 }}
               >
-                Clear All
+                Clear
               </button>
             </div>
           )}
-
-          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem', marginTop: '1rem', fontWeight: '600' }}>
-            TEXT ANALYSIS
-          </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
             {PRESET_PROMPTS.map((preset) => (
