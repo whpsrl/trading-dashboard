@@ -791,22 +791,38 @@ async def get_mt5_symbols():
 async def get_instruments(source: str):
     """Get available instruments for a data source"""
     if source == "binance":
-        return {
-            "success": True,
-            "source": "binance",
-            "instruments": [
-                {"symbol": "BTCUSDT", "name": "Bitcoin"},
-                {"symbol": "ETHUSDT", "name": "Ethereum"},
-                {"symbol": "BNBUSDT", "name": "Binance Coin"},
-                {"symbol": "SOLUSDT", "name": "Solana"},
-                {"symbol": "XRPUSDT", "name": "Ripple"},
-                {"symbol": "ADAUSDT", "name": "Cardano"},
-                {"symbol": "DOGEUSDT", "name": "Dogecoin"},
-                {"symbol": "MATICUSDT", "name": "Polygon"},
-                {"symbol": "DOTUSDT", "name": "Polkadot"},
-                {"symbol": "LINKUSDT", "name": "Chainlink"}
-            ]
-        }
+        try:
+            # Get ALL Binance USDT pairs dynamically
+            exchange_info = binance_client.get_exchange_info()
+            instruments = []
+            
+            for s in exchange_info['symbols']:
+                if s['status'] == 'TRADING' and s['quoteAsset'] == 'USDT':
+                    instruments.append({
+                        "symbol": s['symbol'],
+                        "name": f"{s['baseAsset']}/USDT"
+                    })
+            
+            # Sort by volume/popularity (top pairs first)
+            return {
+                "success": True,
+                "source": "binance",
+                "instruments": instruments[:500],  # Limit to 500
+                "count": len(instruments)
+            }
+        except:
+            # Fallback to hardcoded list
+            return {
+                "success": True,
+                "source": "binance",
+                "instruments": [
+                    {"symbol": "BTCUSDT", "name": "Bitcoin"},
+                    {"symbol": "ETHUSDT", "name": "Ethereum"},
+                    {"symbol": "BNBUSDT", "name": "Binance Coin"},
+                    {"symbol": "SOLUSDT", "name": "Solana"},
+                    {"symbol": "XRPUSDT", "name": "Ripple"}
+                ]
+            }
     elif source == "mt5":
         return await get_mt5_symbols()
     else:
