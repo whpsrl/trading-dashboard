@@ -509,6 +509,103 @@ async def get_current_price(symbol: str = "BTCUSDT"):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/v1/ai/analyze")
+async def analyze_with_ai(request: dict):
+    """AI Text Analysis endpoint"""
+    try:
+        api_key = os.getenv('ANTHROPIC_API_KEY')
+        if not api_key:
+            return {"analysis": "⚠️ AI Analysis requires ANTHROPIC_API_KEY environment variable"}
+        
+        from anthropic import Anthropic
+        client = Anthropic(api_key=api_key)
+        
+        prompt = request.get('prompt', '')
+        
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=2000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        
+        analysis = message.content[0].text
+        
+        return {"analysis": analysis}
+        
+    except ImportError:
+        return {"analysis": "⚠️ AI Analysis requires 'anthropic' package (pip install anthropic)"}
+    except Exception as e:
+        return {"analysis": f"⚠️ AI Analysis error: {str(e)}"}
+
+@app.post("/api/v1/ai/auto-draw")
+async def auto_draw_lines(request: dict):
+    """AI Auto-Draw endpoint"""
+    try:
+        api_key = os.getenv('ANTHROPIC_API_KEY')
+        if not api_key:
+            return {
+                "success": False,
+                "lines": [],
+                "message": "ANTHROPIC_API_KEY not configured"
+            }
+        
+        from anthropic import Anthropic
+        client = Anthropic(api_key=api_key)
+        
+        symbol = request.get('symbol', 'BTC')
+        timeframe = request.get('timeframe', '1h')
+        candles = request.get('candles', [])[-50:]
+        draw_type = request.get('drawType', 'support_resistance')
+        
+        if not candles:
+            return {"success": False, "lines": [], "message": "No candle data"}
+        
+        current_price = candles[-1]['close']
+        high = max(c['high'] for c in candles)
+        low = min(c['low'] for c in candles)
+        
+        prompt = f"""Analyze {symbol} on {timeframe} and identify key levels for {draw_type}.
+
+Current: ${current_price:.2f}
+Range: ${low:.2f} - ${high:.2f}
+
+Return ONLY JSON (no markdown):
+{{
+  "lines": [
+    {{"type": "support", "price": 43200, "strength": "strong", "label": "Key support", "color": "#22c55e"}},
+    {{"type": "resistance", "price": 43800, "strength": "strong", "label": "Resistance", "color": "#ef4444"}}
+  ]
+}}"""
+
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        
+        import json, re
+        response_text = message.content[0].text.strip()
+        response_text = re.sub(r'```json\s*', '', response_text)
+        response_text = re.sub(r'```\s*', '', response_text)
+        json_match = re.search(r'\{[\s\S]*\}', response_text)
+        
+        if json_match:
+            result = json.loads(json_match.group())
+            return {
+                "success": True,
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "drawType": draw_type,
+                "lines": result.get('lines', [])
+            }
+        
+        return {"success": False, "lines": [], "message": "Failed to parse AI response"}
+        
+    except ImportError:
+        return {"success": False, "lines": [], "message": "anthropic package required"}
+    except Exception as e:
+        return {"success": False, "lines": [], "message": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))

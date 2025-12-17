@@ -171,11 +171,6 @@ export default function ChartAnalyzer() {
   };
 
   const analyzeWithAI = async (customPrompt?: string) => {
-    // TEMPORARILY DISABLED - AI endpoint not yet available
-    setAiResponse('AI Analysis feature coming soon...');
-    return;
-    
-    /* COMMENTED OUT - uncomment when backend AI endpoint is ready
     if (!chartData.length) return;
 
     setAnalyzing(true);
@@ -225,7 +220,6 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
     } finally {
       setAnalyzing(false);
     }
-    */
   };
 
   const clearAllLines = () => {
@@ -244,16 +238,11 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
   };
 
   const autoDrawLines = async (drawType: string) => {
-    // TEMPORARILY DISABLED - AI auto-draw endpoint not yet available
-    alert('Auto-draw feature coming soon...');
-    return;
-    
-    /* COMMENTED OUT - uncomment when backend AI endpoint is ready
     if (!chartData.length || !chartRef.current) return;
 
     setAutoDrawing(true);
 
-    try {
+    try{
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       
       const candles = chartData.map(d => ({
@@ -326,7 +315,6 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
     } finally {
       setAutoDrawing(false);
     }
-    */
   };
 
   useEffect(() => {
