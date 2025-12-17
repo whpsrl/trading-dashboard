@@ -26,11 +26,9 @@ const SYMBOLS = [
 ];
 
 const TIMEFRAMES = [
-  { value: 'M5', label: '5 Minutes' },
-  { value: 'M15', label: '15 Minutes' },
-  { value: 'H1', label: '1 Hour' },
-  { value: 'H4', label: '4 Hours' },
-  { value: 'D1', label: '1 Day' },
+  { value: '1h', label: '1 Hour' },
+  { value: '4h', label: '4 Hours' },
+  { value: '1d', label: '1 Day' },
 ];
 
 const PRESET_PROMPTS = [
@@ -51,11 +49,6 @@ export default function ChartAnalyzer() {
   const [analyzing, setAnalyzing] = useState(false);
   const [drawnLines, setDrawnLines] = useState<any[]>([]);
   const [autoDrawing, setAutoDrawing] = useState(false);
-  
-  // Dynamic symbol list
-  const [availableSymbols, setAvailableSymbols] = useState(SYMBOLS);
-  const [symbolSearch, setSymbolSearch] = useState('');
-  const [filteredSymbols, setFilteredSymbols] = useState(SYMBOLS);
   
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -117,59 +110,13 @@ export default function ChartAnalyzer() {
     };
   }, []);
 
-  // Load chart data when symbol or timeframe changes
-  useEffect(() => {
-    loadChartData();
-  }, [selectedSymbol, selectedTimeframe]);
-
-  // Filter symbols based on search
-  useEffect(() => {
-    if (symbolSearch.trim() === '') {
-      setFilteredSymbols(availableSymbols);
-    } else {
-      const search = symbolSearch.toLowerCase();
-      setFilteredSymbols(
-        availableSymbols.filter(s => 
-          s.value.toLowerCase().includes(search) || 
-          s.label.toLowerCase().includes(search)
-        )
-      );
-    }
-  }, [symbolSearch, availableSymbols]);
-
-  // Load all available symbols from Binance on mount
-  useEffect(() => {
-    const loadAllSymbols = async () => {
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        const response = await fetch(`${apiUrl}/api/instruments/binance`);
-        const data = await response.json();
-        
-        if (data.success && data.instruments) {
-          const symbols = data.instruments.map((inst: any) => ({
-            value: inst.symbol,
-            label: inst.name,
-            type: 'crypto'
-          }));
-          setAvailableSymbols(symbols);
-          setFilteredSymbols(symbols);
-        }
-      } catch (error) {
-        console.error('Failed to load symbols:', error);
-        // Keep default hardcoded list if API fails
-      }
-    };
-    
-    loadAllSymbols();
-  }, []);
-
   const loadChartData = async () => {
     setLoading(true);
     setError('');
     
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const endpoint = `${apiUrl}/api/crypto/${selectedSymbol.value}?timeframe=${selectedTimeframe.value}&limit=1000`;
+      const endpoint = `${apiUrl}/api/v1/market-data/${selectedSymbol.type}/${selectedSymbol.value}?timeframe=${selectedTimeframe.value}&limit=1000`;
       
       const response = await fetch(endpoint);
       
@@ -290,7 +237,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
 
     setAutoDrawing(true);
 
-    try{
+    try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       
       const candles = chartData.map(d => ({
@@ -400,41 +347,18 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
             WebkitTextFillColor: 'transparent'
           }}>Chart Analyzer</h1>
           
-          <input
-            type="text"
-            placeholder="🔍 Search symbol..."
-            value={symbolSearch}
-            onChange={(e) => setSymbolSearch(e.target.value)}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#1e293b',
-              color: 'white',
-              borderRadius: '0.5rem',
-              border: '1px solid #475569',
-              fontSize: '0.875rem',
-              width: '150px'
-            }}
-          />
-          
           <select
             value={selectedSymbol.value}
-            onChange={(e) => {
-              const found = availableSymbols.find(s => s.value === e.target.value);
-              if (found) {
-                setSelectedSymbol(found);
-                setSymbolSearch(''); // Clear search after selection
-              }
-            }}
+            onChange={(e) => setSelectedSymbol(SYMBOLS.find(s => s.value === e.target.value)!)}
             style={{
               padding: '0.5rem 1rem',
               backgroundColor: '#334155',
               color: 'white',
               borderRadius: '0.5rem',
-              border: '1px solid #2563eb',
-              maxWidth: '200px'
+              border: '1px solid #2563eb'
             }}
           >
-            {filteredSymbols.map((sym) => (
+            {SYMBOLS.map((sym) => (
               <option key={sym.value} value={sym.value}>{sym.label}</option>
             ))}
           </select>
@@ -517,17 +441,17 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
             <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: '600' }}>
               AI DRAWING TOOLS
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <button
                 onClick={() => autoDrawLines('support_resistance')}
                 disabled={autoDrawing || !chartData.length}
                 style={{
                   width: '100%',
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.625rem 1rem',
                   background: 'linear-gradient(to right, #10b981, #059669)',
                   color: 'white',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.7rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
                   fontWeight: '600',
                   textAlign: 'left',
                   cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
@@ -535,7 +459,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                   border: 'none'
                 }}
               >
-                📏 S/R
+                📏 Support & Resistance
               </button>
               
               <button
@@ -543,11 +467,11 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                 disabled={autoDrawing || !chartData.length}
                 style={{
                   width: '100%',
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.625rem 1rem',
                   background: 'linear-gradient(to right, #3b82f6, #2563eb)',
                   color: 'white',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.7rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
                   fontWeight: '600',
                   textAlign: 'left',
                   cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
@@ -555,7 +479,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                   border: 'none'
                 }}
               >
-                📐 Trends
+                📐 Trendlines
               </button>
               
               <button
@@ -563,11 +487,11 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                 disabled={autoDrawing || !chartData.length}
                 style={{
                   width: '100%',
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.625rem 1rem',
                   background: 'linear-gradient(to right, #f59e0b, #d97706)',
                   color: 'white',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.7rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
                   fontWeight: '600',
                   textAlign: 'left',
                   cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
@@ -575,7 +499,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                   border: 'none'
                 }}
               >
-                🟢 FVG
+                🟢 Imbalance Zones (FVG)
               </button>
               
               <button
@@ -583,11 +507,11 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                 disabled={autoDrawing || !chartData.length}
                 style={{
                   width: '100%',
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.625rem 1rem',
                   background: 'linear-gradient(to right, #8b5cf6, #7c3aed)',
                   color: 'white',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.7rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
                   fontWeight: '600',
                   textAlign: 'left',
                   cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
@@ -595,7 +519,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                   border: 'none'
                 }}
               >
-                📊 Ranges
+                📊 Consolidation Zones
               </button>
             </div>
           </div>
@@ -634,7 +558,7 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
             TEXT ANALYSIS
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
             {PRESET_PROMPTS.map((preset) => (
               <button
                 key={preset.label}
@@ -644,16 +568,15 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
                 }}
                 disabled={analyzing || !chartData.length}
                 style={{
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.625rem 1rem',
                   backgroundColor: '#2563eb',
                   color: 'white',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.7rem',
+                  borderRadius: '0.75rem',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   textAlign: 'left',
                   cursor: (analyzing || !chartData.length) ? 'not-allowed' : 'pointer',
-                  opacity: (analyzing || !chartData.length) ? 0.5 : 1,
-                  border: 'none'
+                  opacity: (analyzing || !chartData.length) ? 0.5 : 1
                 }}
               >
                 {preset.label}
@@ -667,31 +590,30 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
             placeholder="Custom analysis..."
             style={{
               width: '100%',
-              padding: '0.5rem',
+              padding: '0.75rem',
               backgroundColor: '#1e293b',
               color: 'white',
-              borderRadius: '0.375rem',
+              borderRadius: '0.75rem',
               border: '1px solid #1d4ed8',
-              fontSize: '0.75rem',
+              fontSize: '0.875rem',
               resize: 'none',
-              marginBottom: '0.375rem'
+              marginBottom: '0.5rem'
             }}
-            rows={2}
+            rows={3}
           />
           <button
             onClick={() => analyzeWithAI()}
             disabled={analyzing || !prompt.trim() || !chartData.length}
             style={{
               width: '100%',
-              padding: '0.375rem',
+              padding: '0.625rem',
               backgroundColor: '#059669',
               color: 'white',
-              borderRadius: '0.375rem',
+              borderRadius: '0.75rem',
               fontWeight: '600',
-              fontSize: '0.75rem',
+              fontSize: '0.875rem',
               cursor: (analyzing || !prompt.trim() || !chartData.length) ? 'not-allowed' : 'pointer',
-              opacity: (analyzing || !prompt.trim() || !chartData.length) ? 0.5 : 1,
-              border: 'none'
+              opacity: (analyzing || !prompt.trim() || !chartData.length) ? 0.5 : 1
             }}
           >
             {analyzing ? 'Analyzing...' : 'Analyze'}
