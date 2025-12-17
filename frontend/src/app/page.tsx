@@ -10,8 +10,8 @@ export default function Dashboard() {
   const [timeframe, setTimeframe] = useState('H1');
   const [price, setPrice] = useState(null);
   const [loading, setLoading] = useState(true);
-  const chartContainerRef = useRef(null);
-  const chartRef = useRef(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<any>(null);
 
   const timeframes = ['H1', 'H4', 'D1'];
   const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT'];
