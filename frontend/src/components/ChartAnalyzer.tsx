@@ -274,6 +274,94 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
     }
   };
 
+  // NEW: Best Trade - AI decides LONG or SHORT automatically
+  const analyzeBestTrade = async () => {
+    if (!chartData.length) return;
+
+    setAnalyzing(true);
+    setAiResponse('');
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      
+      const marketContext = {
+        symbol: selectedSymbol.label,
+        timeframe: selectedTimeframe.label,
+        currentPrice: chartData[chartData.length - 1]?.close,
+        recentCandles: chartData.slice(-150).map(d => ({
+          time: new Date(d.time * 1000).toISOString(),
+          open: d.open,
+          high: d.high,
+          low: d.low,
+          close: d.close,
+          volume: d.volume,
+        })),
+      };
+
+      const bestTradePrompt = `Tu sei un trader professionista. Analizza ${selectedSymbol.label} su timeframe ${selectedTimeframe.label} e trova IL MIGLIOR TRADE possibile (LONG o SHORT).
+
+Dati di mercato:
+${JSON.stringify(marketContext, null, 2)}
+
+IMPORTANTE: Devi SEMPRE fornire un trade setup (anche se il mercato è laterale, trova il setup migliore).
+
+Fornisci la risposta in questo formato ESATTO:
+
+## 🎯 BEST TRADE SETUP
+
+### Direction
+**[LONG o SHORT]** (scegli quello con più probabilità di successo)
+
+### Signal Strength
+- **Overall Score**: X/10
+- **Confidence**: XX%
+- **Setup Quality**: Strong/Medium/Weak
+
+### Entry Strategy
+- **Entry Price**: $XX.XX
+- **Stop Loss**: $XX.XX
+- **Take Profit 1**: $XX.XX
+- **Take Profit 2**: $XX.XX (optional)
+- **Risk/Reward**: X.X:1
+
+### Why This Direction?
+- [Motivo principale 1]
+- [Motivo principale 2]
+- [Motivo principale 3]
+- [Conferma pattern/indicatori]
+
+### Market Context
+- **Trend**: Bullish/Bearish/Neutral
+- **Volume**: Strong/Weak
+- **Momentum**: Increasing/Decreasing
+- **Key Level**: $XX.XX
+
+### Action Plan
+**[ENTER NOW / WAIT FOR PULLBACK / WAIT FOR BREAKOUT]**
+
+Se "WAIT", specifica: "Wait for price to reach $XX.XX then enter"
+
+### Risk Warning
+[Eventuale rischio o scenario alternativo]
+
+---
+**Bottom Line**: [Una frase conclusiva chiara tipo "Strong LONG setup with 7.5/10 score - Enter now" oppure "Weak setup, wait for better entry"]`;
+
+      const response = await fetch(`${apiUrl}/api/v1/ai/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: bestTradePrompt }),
+      });
+
+      const result = await response.json();
+      setAiResponse(result.analysis || 'Nessuna risposta');
+    } catch (error) {
+      setAiResponse('Errore durante l\'analisi del best trade');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   // NEW: Analyze BUY or SELL signal
   const analyzeSignal = async (signal: 'buy' | 'sell') => {
     if (!chartData.length) return;
@@ -746,15 +834,15 @@ Fornisci:
           <div style={{ marginBottom: '1rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <button
-                onClick={() => analyzeSignal('buy')}
+                onClick={() => analyzeBestTrade()}
                 disabled={analyzing || !chartData.length}
                 style={{
                   width: '100%',
-                  padding: '0.75rem 1rem',
-                  background: 'linear-gradient(to right, #10b981, #059669)',
+                  padding: '1rem',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   color: 'white',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
+                  borderRadius: '0.75rem',
+                  fontSize: '1rem',
                   fontWeight: '700',
                   textAlign: 'center',
                   cursor: (analyzing || !chartData.length) ? 'not-allowed' : 'pointer',
@@ -763,88 +851,58 @@ Fornisci:
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.5rem'
+                  gap: '0.75rem',
+                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                  transition: 'all 0.3s ease'
                 }}
               >
-                <span style={{ fontSize: '1.5rem' }}>📈</span>
-                <span>BUY Signal</span>
-              </button>
-              
-              <button
-                onClick={() => analyzeSignal('sell')}
-                disabled={analyzing || !chartData.length}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  background: 'linear-gradient(to right, #ef4444, #dc2626)',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '700',
-                  textAlign: 'center',
-                  cursor: (analyzing || !chartData.length) ? 'not-allowed' : 'pointer',
-                  opacity: (analyzing || !chartData.length) ? 0.5 : 1,
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <span style={{ fontSize: '1.5rem' }}>📉</span>
-                <span>SELL Signal</span>
-              </button>
-
-              <button
-                onClick={() => analyzeCurrencyStrength()}
-                disabled={analyzing || !chartData.length}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  background: 'linear-gradient(to right, #8b5cf6, #7c3aed)',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '700',
-                  textAlign: 'center',
-                  cursor: (analyzing || !chartData.length) ? 'not-allowed' : 'pointer',
-                  opacity: (analyzing || !chartData.length) ? 0.5 : 1,
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <span style={{ fontSize: '1.5rem' }}>💪</span>
-                <span>Currency Strength</span>
-              </button>
-
-              <button
-                onClick={() => analyzeBreakoutLevels()}
-                disabled={analyzing || !chartData.length}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  background: 'linear-gradient(to right, #f59e0b, #d97706)',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '700',
-                  textAlign: 'center',
-                  cursor: (analyzing || !chartData.length) ? 'not-allowed' : 'pointer',
-                  opacity: (analyzing || !chartData.length) ? 0.5 : 1,
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <span style={{ fontSize: '1.5rem' }}>⚡</span>
-                <span>Breakout Levels</span>
+                <span style={{ fontSize: '2rem' }}>🎯</span>
+                <span>{analyzing ? 'Analyzing...' : 'Find Best Trade'}</span>
               </button>
             </div>
+          </div>
+
+          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem', marginTop: '1rem', fontWeight: '600' }}>
+            ADVANCED ANALYSIS
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1rem' }}>
+            <button
+              onClick={() => analyzeCurrencyStrength()}
+              disabled={analyzing || !chartData.length}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                background: 'rgba(139, 92, 246, 0.2)',
+                color: '#a78bfa',
+                borderRadius: '0.375rem',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                cursor: (analyzing || !chartData.length) ? 'not-allowed' : 'pointer',
+                opacity: (analyzing || !chartData.length) ? 0.5 : 1,
+                border: '1px solid rgba(139, 92, 246, 0.3)',
+              }}
+            >
+              💪 Strength Analysis
+            </button>
+
+            <button
+              onClick={() => analyzeBreakoutLevels()}
+              disabled={analyzing || !chartData.length}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                background: 'rgba(245, 158, 11, 0.2)',
+                color: '#fbbf24',
+                borderRadius: '0.375rem',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                cursor: (analyzing || !chartData.length) ? 'not-allowed' : 'pointer',
+                opacity: (analyzing || !chartData.length) ? 0.5 : 1,
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+              }}
+            >
+              ⚡ Breakout Levels
+            </button>
           </div>
 
           <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem', marginTop: '1rem', fontWeight: '600' }}>

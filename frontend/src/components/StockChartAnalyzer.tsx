@@ -79,10 +79,10 @@ const SYMBOLS = [
 ];
 
 const TIMEFRAMES = [
-  { value: '15m', label: '15 Minutes' },
   { value: '1h', label: '1 Hour' },
   { value: '4h', label: '4 Hours' },
   { value: '1d', label: '1 Day' },
+  { value: '1w', label: '1 Week' },
 ];
 
 const PRESET_PROMPTS = [
@@ -94,7 +94,7 @@ const PRESET_PROMPTS = [
 
 export default function ChartAnalyzer() {
   const [selectedSymbol, setSelectedSymbol] = useState(SYMBOLS[0]);
-  const [selectedTimeframe, setSelectedTimeframe] = useState(TIMEFRAMES[0]);
+  const [selectedTimeframe, setSelectedTimeframe] = useState(TIMEFRAMES[2]); // 1d default
   const [chartData, setChartData] = useState<OHLCVData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
