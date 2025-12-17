@@ -76,6 +76,32 @@ const SYMBOLS = [
   { value: 'RIVN', label: 'Rivian Automotive', type: 'stock', sector: 'Automotive' },
   { value: 'F', label: 'Ford Motor Co.', type: 'stock', sector: 'Automotive' },
   { value: 'GM', label: 'General Motors Co.', type: 'stock', sector: 'Automotive' },
+  
+  // === INDICES ===
+  { value: '^GSPC', label: 'S&P 500', type: 'index', sector: 'Index' },
+  { value: '^DJI', label: 'Dow Jones Industrial', type: 'index', sector: 'Index' },
+  { value: '^IXIC', label: 'NASDAQ Composite', type: 'index', sector: 'Index' },
+  { value: '^RUT', label: 'Russell 2000', type: 'index', sector: 'Index' },
+  { value: '^VIX', label: 'CBOE Volatility Index', type: 'index', sector: 'Index' },
+  { value: '^FTSE', label: 'FTSE 100 (London)', type: 'index', sector: 'Index' },
+  { value: '^N225', label: 'Nikkei 225 (Tokyo)', type: 'index', sector: 'Index' },
+  { value: '^HSI', label: 'Hang Seng (Hong Kong)', type: 'index', sector: 'Index' },
+  
+  // === COMMODITIES ===
+  { value: 'GC=F', label: 'Gold Futures', type: 'commodity', sector: 'Metals' },
+  { value: 'SI=F', label: 'Silver Futures', type: 'commodity', sector: 'Metals' },
+  { value: 'PL=F', label: 'Platinum Futures', type: 'commodity', sector: 'Metals' },
+  { value: 'HG=F', label: 'Copper Futures', type: 'commodity', sector: 'Metals' },
+  { value: 'CL=F', label: 'Crude Oil WTI', type: 'commodity', sector: 'Energy' },
+  { value: 'BZ=F', label: 'Brent Crude Oil', type: 'commodity', sector: 'Energy' },
+  { value: 'NG=F', label: 'Natural Gas', type: 'commodity', sector: 'Energy' },
+  { value: 'RB=F', label: 'Gasoline', type: 'commodity', sector: 'Energy' },
+  { value: 'ZC=F', label: 'Corn Futures', type: 'commodity', sector: 'Agriculture' },
+  { value: 'ZW=F', label: 'Wheat Futures', type: 'commodity', sector: 'Agriculture' },
+  { value: 'ZS=F', label: 'Soybean Futures', type: 'commodity', sector: 'Agriculture' },
+  { value: 'KC=F', label: 'Coffee Futures', type: 'commodity', sector: 'Agriculture' },
+  { value: 'SB=F', label: 'Sugar Futures', type: 'commodity', sector: 'Agriculture' },
+  { value: 'CC=F', label: 'Cocoa Futures', type: 'commodity', sector: 'Agriculture' },
 ];
 
 const TIMEFRAMES = [
