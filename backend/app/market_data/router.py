@@ -200,3 +200,59 @@ async def get_asset_info(
         return info
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========================
+# Frontend-compatible endpoints
+# ========================
+
+@router.get("/crypto/{symbol}")
+async def get_crypto_data(
+    symbol: str,
+    timeframe: str = Query("1h", description="Timeframe"),
+    limit: int = Query(100, description="Number of candles")
+):
+    """Get crypto OHLCV data - frontend compatible"""
+    return await get_ohlcv(
+        symbol=symbol,
+        timeframe=timeframe,
+        limit=limit,
+        asset_type="crypto",
+        exchange="binance"
+    )
+
+
+@router.get("/forex/{symbol}")
+async def get_forex_data(
+    symbol: str,
+    timeframe: str = Query("1h", description="Timeframe"),
+    limit: int = Query(100, description="Number of candles")
+):
+    """Get forex OHLCV data - frontend compatible"""
+    # Convert GBP_JPY to GBP/JPY format if needed
+    if '_' in symbol:
+        symbol = symbol.replace('_', '/')
+    
+    return await get_ohlcv(
+        symbol=symbol,
+        timeframe=timeframe,
+        limit=limit,
+        asset_type="forex",
+        exchange="yahoo"
+    )
+
+
+@router.get("/stock/{symbol}")
+async def get_stock_data(
+    symbol: str,
+    timeframe: str = Query("1h", description="Timeframe"),
+    limit: int = Query(100, description="Number of candles")
+):
+    """Get stock OHLCV data - frontend compatible"""
+    return await get_ohlcv(
+        symbol=symbol,
+        timeframe=timeframe,
+        limit=limit,
+        asset_type="stock",
+        exchange="yahoo"
+    )
