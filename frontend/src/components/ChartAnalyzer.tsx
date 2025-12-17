@@ -154,7 +154,6 @@ export default function ChartAnalyzer() {
         candlestickSeriesRef.current.setData(formattedData);
         console.log('🎨 Chart updated with data!');
       }
-      }
     } catch (error) {
       console.error('❌ Error loading chart data:', error);
       alert(`Failed to load chart: ${error}`);
