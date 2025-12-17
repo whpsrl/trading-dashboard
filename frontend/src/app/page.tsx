@@ -8,11 +8,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://trading-dashboard-pr
 export default function Dashboard() {
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [timeframe, setTimeframe] = useState('H1');
-  const [price, setPrice] = useState(null);
-  const [aiPrediction, setAiPrediction] = useState(null);
+  const [price, setPrice] = useState<number | null>(null);
+  const [aiPrediction, setAiPrediction] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const chartContainerRef = useRef(null);
-  const chartRef = useRef(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<any>(null);
 
   const timeframes = ['M5', 'M15', 'H1', 'H4', 'D1'];
   const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT'];
