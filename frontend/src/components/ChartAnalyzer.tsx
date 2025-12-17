@@ -219,11 +219,15 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
 
   const clearAllLines = () => {
     // Remove all drawn lines from chart
-    drawnLinesRef.current.forEach(line => {
-      if (line && line.remove) {
-        line.remove();
-      }
-    });
+    if (chartRef.current) {
+      drawnLinesRef.current.forEach(lineSeries => {
+        try {
+          chartRef.current?.removeSeries(lineSeries);
+        } catch (e) {
+          console.error('Error removing line:', e);
+        }
+      });
+    }
     drawnLinesRef.current = [];
     setDrawnLines([]);
   };
@@ -264,16 +268,22 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
 
         result.lines.forEach((line: any) => {
           if (line.type === 'support' || line.type === 'resistance') {
-            // Draw horizontal line
-            const priceLine = chart.createPriceLine({
-              price: line.price,
+            // Draw horizontal line using LineSeries
+            const lineSeries = chart.addLineSeries({
               color: line.color || (line.type === 'support' ? '#22c55e' : '#ef4444'),
               lineWidth: 2,
-              lineStyle: 0,
-              axisLabelVisible: true,
-              title: line.label || line.type,
+              priceLineVisible: false,
+              lastValueVisible: false,
             });
-            newLines.push(priceLine);
+            
+            // Create horizontal line data
+            const lineData = chartData.map(candle => ({
+              time: candle.time,
+              value: line.price
+            }));
+            
+            lineSeries.setData(lineData);
+            newLines.push(lineSeries);
           }
           // More line types will be added: trendline, imbalance, etc.
         });
