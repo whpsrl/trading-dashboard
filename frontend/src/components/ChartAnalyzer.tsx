@@ -319,13 +319,12 @@ Fornisci un'analisi dettagliata, professionale e actionable.`;
           <div ref={chartContainerRef} className="w-full h-full" />
         </div>
 
-        {/* RIGHT: AI Analysis (35%) - Scrollable */}
-        <div className="bg-gray-900 border-l border-gray-700 overflow-y-auto" style={{ width: '35%' }}>
-          <div className="p-4 space-y-4">
-            
-            <h2 className="text-xl font-bold text-white sticky top-0 bg-gray-900 pb-3 border-b border-gray-700">
-              🤖 AI Analysis
-            </h2>
+        {/* RIGHT: AI Analysis (35%) */}
+        <div className="flex flex-col bg-gray-900 border-l border-gray-700" style={{ width: '35%' }}>
+          
+          {/* AI Controls - Fixed at top */}
+          <div className="p-4 space-y-4 border-b border-gray-700 shrink-0">
+            <h2 className="text-xl font-bold text-white">🤖 AI Analysis</h2>
             
             {/* Preset Buttons */}
             <div className="space-y-2">
@@ -362,119 +361,128 @@ Fornisci un'analisi dettagliata, professionale e actionable.`;
                 {analyzing ? 'Analyzing...' : 'Analyze'}
               </button>
             </div>
+          </div>
 
-            {/* AI Response */}
-            {aiResponse && (
-              <div className="space-y-3">
-                <div className="text-sm font-semibold text-gray-400">Analysis Result:</div>
-                {aiResponse.split('\n\n').map((block, blockIdx) => {
-                  const lines = block.split('\n').filter(l => l.trim());
-                  if (lines.length === 0) return null;
-                  
-                  const firstLine = lines[0];
-                  
-                  if (firstLine.startsWith('##')) {
-                    const title = firstLine.replace(/^##\s*/, '').replace(/📊|🕯️|📈|⚠️|📋|🎯|🔴|🟢|🟡/g, '').trim();
-                    const icon = firstLine.match(/📊|🕯️|📈|⚠️|📋|🎯|🔴|🟢|🟡/)?.[0] || '📊';
+          {/* AI Results - Scrollable Box */}
+          <div className="flex-1 overflow-y-auto bg-gray-950 p-4">
+            <div className="space-y-3">
+              
+              {analyzing && (
+                <div className="text-center text-blue-400 text-sm py-12">
+                  <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <div>Analyzing chart...</div>
+                </div>
+              )}
+
+              {!aiResponse && !analyzing && (
+                <div className="text-center text-gray-500 text-sm py-12">
+                  <div className="text-5xl mb-3">🤖</div>
+                  <div className="text-gray-400">Select an analysis</div>
+                  <div className="text-xs text-gray-600 mt-1">or enter custom prompt above</div>
+                </div>
+              )}
+
+              {aiResponse && !analyzing && (
+                <>
+                  <div className="text-sm font-semibold text-gray-400 mb-3 sticky top-0 bg-gray-950 py-2">
+                    📊 Analysis Result:
+                  </div>
+                  {aiResponse.split('\n\n').map((block, blockIdx) => {
+                    const lines = block.split('\n').filter(l => l.trim());
+                    if (lines.length === 0) return null;
                     
-                    const getBgColor = () => {
-                      if (title.includes('BULLISH') || title.includes('SCENARI')) return 'from-green-900/30 to-green-800/20 border-green-700/50';
-                      if (title.includes('BEARISH')) return 'from-red-900/30 to-red-800/20 border-red-700/50';
-                      if (title.includes('OVERVIEW') || title.includes('MERCATO')) return 'from-blue-900/30 to-blue-800/20 border-blue-700/50';
-                      if (title.includes('PATTERN') || title.includes('CANDLESTICK')) return 'from-yellow-900/30 to-yellow-800/20 border-yellow-700/50';
-                      if (title.includes('VOLUME')) return 'from-purple-900/30 to-purple-800/20 border-purple-700/50';
-                      if (title.includes('LIVELLI') || title.includes('SUPPORTO')) return 'from-orange-900/30 to-orange-800/20 border-orange-700/50';
-                      return 'from-gray-800 to-gray-900 border-gray-700';
-                    };
+                    const firstLine = lines[0];
                     
-                    return (
-                      <div key={blockIdx} className={`bg-gradient-to-br ${getBgColor()} rounded-lg border p-4 shadow-lg`}>
-                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-700/50">
-                          <span className="text-2xl">{icon}</span>
-                          <h3 className="text-base font-bold text-white">{title}</h3>
-                        </div>
-                        
-                        <div className="space-y-2 text-xs">
-                          {lines.slice(1).map((line, lineIdx) => {
-                            if (line.startsWith('###')) {
-                              return (
-                                <div key={lineIdx} className="font-semibold text-green-400 mt-2 flex items-center gap-1">
-                                  <span>▶</span>{line.replace(/^###\s*/, '').replace(/\*\*/g, '')}
-                                </div>
-                              );
-                            }
-                            
-                            if (line.startsWith('####')) {
-                              return (
-                                <div key={lineIdx} className="font-medium text-purple-300 ml-2 flex items-center gap-1">
-                                  <span>•</span>{line.replace(/^####\s*/, '').replace(/\*\*/g, '')}
-                                </div>
-                              );
-                            }
-                            
-                            if (line.includes('**') && line.includes(':')) {
-                              const match = line.match(/\*\*([^*]+)\*\*:\s*(.+)/);
-                              if (match) {
+                    if (firstLine.startsWith('##')) {
+                      const title = firstLine.replace(/^##\s*/, '').replace(/📊|🕯️|📈|⚠️|📋|🎯|🔴|🟢|🟡/g, '').trim();
+                      const icon = firstLine.match(/📊|🕯️|📈|⚠️|📋|🎯|🔴|🟢|🟡/)?.[0] || '📊';
+                      
+                      const getBgColor = () => {
+                        if (title.includes('BULLISH') || title.includes('SCENARI')) return 'from-green-900/30 to-green-800/20 border-green-700/50';
+                        if (title.includes('BEARISH')) return 'from-red-900/30 to-red-800/20 border-red-700/50';
+                        if (title.includes('OVERVIEW') || title.includes('MERCATO')) return 'from-blue-900/30 to-blue-800/20 border-blue-700/50';
+                        if (title.includes('PATTERN') || title.includes('CANDLESTICK')) return 'from-yellow-900/30 to-yellow-800/20 border-yellow-700/50';
+                        if (title.includes('VOLUME')) return 'from-purple-900/30 to-purple-800/20 border-purple-700/50';
+                        if (title.includes('LIVELLI') || title.includes('SUPPORTO')) return 'from-orange-900/30 to-orange-800/20 border-orange-700/50';
+                        return 'from-gray-800 to-gray-900 border-gray-700';
+                      };
+                      
+                      return (
+                        <div key={blockIdx} className={`bg-gradient-to-br ${getBgColor()} rounded-lg border p-4 shadow-lg`}>
+                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-700/50">
+                            <span className="text-2xl">{icon}</span>
+                            <h3 className="text-base font-bold text-white">{title}</h3>
+                          </div>
+                          
+                          <div className="space-y-2 text-xs">
+                            {lines.slice(1).map((line, lineIdx) => {
+                              if (line.startsWith('###')) {
                                 return (
-                                  <div key={lineIdx} className="flex gap-2 p-2 bg-gray-800/40 rounded">
-                                    <span className="font-bold text-yellow-400 shrink-0">{match[1]}:</span>
-                                    <span className="text-gray-200">{match[2]}</span>
+                                  <div key={lineIdx} className="font-semibold text-green-400 mt-2 flex items-center gap-1">
+                                    <span>▶</span>{line.replace(/^###\s*/, '').replace(/\*\*/g, '')}
                                   </div>
                                 );
                               }
-                            }
-                            
-                            if (line.trim().startsWith('-')) {
-                              return (
-                                <div key={lineIdx} className="flex gap-2 ml-3">
-                                  <span className="text-blue-400">•</span>
-                                  <span className="text-gray-300">{line.replace(/^-\s*/, '').replace(/\*\*/g, '')}</span>
-                                </div>
-                              );
-                            }
-                            
-                            if (line.trim()) {
-                              return (
-                                <p key={lineIdx} className="text-gray-300 leading-relaxed">
-                                  {line.replace(/\*\*/g, '')}
-                                </p>
-                              );
-                            }
-                            
-                            return null;
-                          })}
+                              
+                              if (line.startsWith('####')) {
+                                return (
+                                  <div key={lineIdx} className="font-medium text-purple-300 ml-2 flex items-center gap-1">
+                                    <span>•</span>{line.replace(/^####\s*/, '').replace(/\*\*/g, '')}
+                                  </div>
+                                );
+                              }
+                              
+                              if (line.includes('**') && line.includes(':')) {
+                                const match = line.match(/\*\*([^*]+)\*\*:\s*(.+)/);
+                                if (match) {
+                                  return (
+                                    <div key={lineIdx} className="flex gap-2 p-2 bg-gray-800/40 rounded">
+                                      <span className="font-bold text-yellow-400 shrink-0">{match[1]}:</span>
+                                      <span className="text-gray-200">{match[2]}</span>
+                                    </div>
+                                  );
+                                }
+                              }
+                              
+                              if (line.trim().startsWith('-')) {
+                                return (
+                                  <div key={lineIdx} className="flex gap-2 ml-3">
+                                    <span className="text-blue-400">•</span>
+                                    <span className="text-gray-300">{line.replace(/^-\s*/, '').replace(/\*\*/g, '')}</span>
+                                  </div>
+                                );
+                              }
+                              
+                              if (line.trim()) {
+                                return (
+                                  <p key={lineIdx} className="text-gray-300 leading-relaxed">
+                                    {line.replace(/\*\*/g, '')}
+                                  </p>
+                                );
+                              }
+                              
+                              return null;
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  }
+                      );
+                    }
+                    
+                    return null;
+                  })}
                   
-                  return null;
-                })}
-                
-                <div className="p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg flex gap-2 text-xs">
-                  <span className="text-xl">⚠️</span>
-                  <p className="text-yellow-200">
-                    <strong>Disclaimer:</strong> Solo a scopo informativo, non consulenza finanziaria.
-                  </p>
-                </div>
-              </div>
-            )}
+                  <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg flex gap-2 text-xs">
+                    <span className="text-xl">⚠️</span>
+                    <p className="text-yellow-200">
+                      <strong>Disclaimer:</strong> Solo a scopo informativo, non consulenza finanziaria.
+                    </p>
+                  </div>
+                </>
+              )}
 
-            {!aiResponse && !analyzing && (
-              <div className="text-center text-gray-500 text-sm py-8">
-                <div className="text-4xl mb-2">🤖</div>
-                <div>Select an analysis or enter custom prompt</div>
-              </div>
-            )}
-
-            {analyzing && (
-              <div className="text-center text-blue-400 text-sm py-8">
-                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <div>Analyzing...</div>
-              </div>
-            )}
-
+            </div>
           </div>
+
         </div>
 
       </div>
