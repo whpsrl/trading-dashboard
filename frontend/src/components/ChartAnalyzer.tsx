@@ -367,9 +367,109 @@ Fornisci un'analisi dettagliata, professionale e actionable.`;
 
         {aiResponse && (
           <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-400">AI Analysis Result</label>
-            <div className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 whitespace-pre-wrap">
-              {aiResponse}
+            <label className="text-sm text-gray-400 font-semibold mb-2">AI Analysis Result</label>
+            <div className="space-y-4">
+              {aiResponse.split('\n\n').map((block, blockIdx) => {
+                const lines = block.split('\n').filter(l => l.trim());
+                if (lines.length === 0) return null;
+                
+                const firstLine = lines[0];
+                
+                // Detect section type by header
+                if (firstLine.startsWith('##')) {
+                  const title = firstLine.replace(/^##\s*/, '').replace(/📊|🕯️|📈|⚠️|📋|🎯|🔴|🟢|🟡/g, '').trim();
+                  const icon = firstLine.match(/📊|🕯️|📈|⚠️|📋|🎯|🔴|🟢|🟡/)?.[0] || '📊';
+                  
+                  const getBgColor = () => {
+                    if (title.includes('BULLISH') || title.includes('SCENARI')) return 'from-green-900/30 to-green-800/20 border-green-700/50';
+                    if (title.includes('BEARISH')) return 'from-red-900/30 to-red-800/20 border-red-700/50';
+                    if (title.includes('OVERVIEW') || title.includes('MERCATO')) return 'from-blue-900/30 to-blue-800/20 border-blue-700/50';
+                    if (title.includes('PATTERN') || title.includes('CANDLESTICK')) return 'from-yellow-900/30 to-yellow-800/20 border-yellow-700/50';
+                    if (title.includes('VOLUME')) return 'from-purple-900/30 to-purple-800/20 border-purple-700/50';
+                    if (title.includes('LIVELLI') || title.includes('SUPPORTO')) return 'from-orange-900/30 to-orange-800/20 border-orange-700/50';
+                    return 'from-gray-800 to-gray-900 border-gray-700';
+                  };
+                  
+                  return (
+                    <div key={blockIdx} className={`bg-gradient-to-br ${getBgColor()} rounded-xl border p-5 shadow-lg`}>
+                      {/* Header */}
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-700/50">
+                        <span className="text-3xl">{icon}</span>
+                        <h2 className="text-xl font-bold text-white">{title}</h2>
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="space-y-3">
+                        {lines.slice(1).map((line, lineIdx) => {
+                          // Sub-headers
+                          if (line.startsWith('###')) {
+                            return (
+                              <h3 key={lineIdx} className="text-lg font-semibold text-green-400 mt-4 mb-2 flex items-center gap-2">
+                                <span className="text-green-500">▶</span>
+                                {line.replace(/^###\s*/, '').replace(/\*\*/g, '')}
+                              </h3>
+                            );
+                          }
+                          
+                          if (line.startsWith('####')) {
+                            return (
+                              <h4 key={lineIdx} className="text-base font-medium text-purple-300 mt-2 ml-2 flex items-center gap-2">
+                                <span className="text-purple-400">•</span>
+                                {line.replace(/^####\s*/, '').replace(/\*\*/g, '')}
+                              </h4>
+                            );
+                          }
+                          
+                          // Key-value pairs (bold: value)
+                          if (line.includes('**') && line.includes(':')) {
+                            const match = line.match(/\*\*([^*]+)\*\*:\s*(.+)/);
+                            if (match) {
+                              return (
+                                <div key={lineIdx} className="flex items-start gap-3 p-3 bg-gray-800/40 rounded-lg">
+                                  <span className="font-bold text-yellow-400 min-w-[160px]">{match[1]}:</span>
+                                  <span className="text-gray-200 flex-1">{match[2]}</span>
+                                </div>
+                              );
+                            }
+                          }
+                          
+                          // List items
+                          if (line.trim().startsWith('-')) {
+                            return (
+                              <div key={lineIdx} className="flex items-start gap-2 ml-4">
+                                <span className="text-blue-400 mt-1 font-bold">•</span>
+                                <p className="text-gray-300 flex-1">{line.replace(/^-\s*/, '').replace(/\*\*/g, '')}</p>
+                              </div>
+                            );
+                          }
+                          
+                          // Regular text
+                          if (line.trim()) {
+                            return (
+                              <p key={lineIdx} className="text-gray-300 leading-relaxed">
+                                {line.replace(/\*\*/g, '')}
+                              </p>
+                            );
+                          }
+                          
+                          return null;
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+                
+                return null;
+              })}
+              
+              {/* Warning footer */}
+              <div className="mt-6 p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-lg flex items-center gap-3">
+                <span className="text-2xl">⚠️</span>
+                <p className="text-yellow-200 text-sm">
+                  <strong>Disclaimer:</strong> Questa analisi AI è solo a scopo informativo e non costituisce consulenza finanziaria. 
+                  Fai sempre le tue ricerche prima di investire.
+                </p>
+              </div>
             </div>
           </div>
         )}
