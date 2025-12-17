@@ -47,13 +47,10 @@ export default function ChartAnalyzer() {
   const [prompt, setPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
-  const [drawnLines, setDrawnLines] = useState<any[]>([]);
-  const [autoDrawing, setAutoDrawing] = useState(false);
   
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
-  const drawnLinesRef = useRef<any[]>([]);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -217,77 +214,6 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
     }
   };
 
-  const clearAllLines = () => {
-    // Remove all drawn lines from chart
-    drawnLinesRef.current.forEach(line => {
-      if (line && line.remove) {
-        line.remove();
-      }
-    });
-    drawnLinesRef.current = [];
-    setDrawnLines([]);
-  };
-
-  const autoDrawLines = async () => {
-    if (!chartData.length || !chartRef.current) return;
-
-    setAutoDrawing(true);
-    clearAllLines();
-
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      
-      const candles = chartData.map(d => ({
-        time: new Date(d.time * 1000).toISOString(),
-        open: d.open,
-        high: d.high,
-        low: d.low,
-        close: d.close,
-        volume: d.volume
-      }));
-
-      const response = await fetch(`${apiUrl}/api/v1/ai/auto-draw`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          symbol: selectedSymbol.label,
-          timeframe: selectedTimeframe.label,
-          candles: candles
-        }),
-      });
-
-      const result = await response.json();
-      
-      if (result.success && result.lines) {
-        const chart = chartRef.current;
-        const newLines: any[] = [];
-
-        result.lines.forEach((line: any) => {
-          if (line.type === 'support' || line.type === 'resistance') {
-            // Draw horizontal line
-            const priceLine = chart.createPriceLine({
-              price: line.price,
-              color: line.color || (line.type === 'support' ? '#22c55e' : '#ef4444'),
-              lineWidth: 2,
-              lineStyle: 0,
-              axisLabelVisible: true,
-              title: line.label || line.type,
-            });
-            newLines.push(priceLine);
-          }
-          // More line types will be added: trendline, imbalance, etc.
-        });
-
-        drawnLinesRef.current = newLines;
-        setDrawnLines(result.lines);
-      }
-    } catch (error) {
-      console.error('Auto-draw error:', error);
-    } finally {
-      setAutoDrawing(false);
-    }
-  };
-
   useEffect(() => {
     loadChartData();
   }, [selectedSymbol, selectedTimeframe]);
@@ -411,56 +337,6 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
           <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#60a5fa', marginBottom: '1rem' }}>
             🤖 AI Analysis
           </h2>
-          
-          {/* Auto-Draw Button */}
-          <button
-            onClick={autoDrawLines}
-            disabled={autoDrawing || !chartData.length}
-            style={{
-              width: '100%',
-              padding: '0.75rem 1rem',
-              marginBottom: '1rem',
-              background: 'linear-gradient(to right, #8b5cf6, #3b82f6)',
-              color: 'white',
-              borderRadius: '0.75rem',
-              fontSize: '0.875rem',
-              fontWeight: '700',
-              textAlign: 'center',
-              cursor: (autoDrawing || !chartData.length) ? 'not-allowed' : 'pointer',
-              opacity: (autoDrawing || !chartData.length) ? 0.5 : 1,
-              border: 'none'
-            }}
-          >
-            {autoDrawing ? '⏳ Drawing...' : '✨ AI Auto-Draw'}
-          </button>
-
-          {drawnLines.length > 0 && (
-            <div style={{ 
-              marginBottom: '1rem',
-              padding: '0.5rem',
-              backgroundColor: 'rgba(34, 197, 94, 0.1)',
-              borderRadius: '0.5rem',
-              fontSize: '0.75rem',
-              color: '#4ade80'
-            }}>
-              ✓ {drawnLines.length} lines drawn
-              <button
-                onClick={clearAllLines}
-                style={{
-                  marginLeft: '0.5rem',
-                  padding: '0.25rem 0.5rem',
-                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                  color: '#f87171',
-                  border: 'none',
-                  borderRadius: '0.25rem',
-                  fontSize: '0.75rem',
-                  cursor: 'pointer'
-                }}
-              >
-                Clear
-              </button>
-            </div>
-          )}
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
             {PRESET_PROMPTS.map((preset) => (
