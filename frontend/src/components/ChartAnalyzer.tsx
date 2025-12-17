@@ -418,7 +418,13 @@ Fornisci un'analisi dettagliata, professionale e actionable con sezioni ben orga
           
           <select
             value={selectedSymbol.value}
-            onChange={(e) => setSelectedSymbol(filteredSymbols.find(s => s.value === e.target.value)!)}
+            onChange={(e) => {
+              const found = availableSymbols.find(s => s.value === e.target.value);
+              if (found) {
+                setSelectedSymbol(found);
+                setSymbolSearch(''); // Clear search after selection
+              }
+            }}
             style={{
               padding: '0.5rem 1rem',
               backgroundColor: '#334155',
