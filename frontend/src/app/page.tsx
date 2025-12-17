@@ -73,7 +73,7 @@ export default function Dashboard() {
         );
         const data = await response.json();
 
-        if (chartRef.current) {
+        if (chartRef.current && data.data) {
           chartRef.current.candlestickSeries.setData(data.data);
           setPrice(data.current_price);
           setAiPrediction(data.ai_prediction);
@@ -170,14 +170,14 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* AI Prediction Panel */}
+        {/* AI Prediction Panel - BIG ARROW */}
         {aiPrediction && (
           <div className={`rounded-lg p-6 mb-6 border-2 ${getPredictionBg(aiPrediction.direction)}`}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left: Main Prediction */}
+              {/* Left: Main Prediction with BIG ARROW */}
               <div>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className={`text-7xl ${getPredictionColor(aiPrediction.direction)}`}>
+                  <div className={`text-8xl font-bold ${getPredictionColor(aiPrediction.direction)}`}>
                     {getPredictionIcon(aiPrediction.direction)}
                   </div>
                   <div>
@@ -188,49 +188,53 @@ export default function Dashboard() {
                     <div className="text-lg text-gray-300 mt-1">
                       Confidence: <span className="font-bold">{aiPrediction.confidence}%</span>
                     </div>
-                    <div className="text-sm text-gray-400 mt-1">
-                      ML Score: {aiPrediction.ml_score} | Total: {aiPrediction.score}
-                    </div>
+                    {aiPrediction.ml_score !== undefined && (
+                      <div className="text-sm text-gray-400 mt-1">
+                        ML Score: {aiPrediction.ml_score} | Total: {aiPrediction.score}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Features */}
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div className="bg-gray-800/50 rounded p-3">
-                    <div className="text-xs text-gray-400">Price Momentum (5)</div>
-                    <div className={`text-lg font-bold ${aiPrediction.features.price_momentum_5 > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {aiPrediction.features.price_momentum_5 > 0 ? '+' : ''}{aiPrediction.features.price_momentum_5}%
+                {aiPrediction.features && (
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <div className="bg-gray-800/50 rounded p-3">
+                      <div className="text-xs text-gray-400">Price Momentum (5)</div>
+                      <div className={`text-lg font-bold ${aiPrediction.features.price_momentum_5 > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {aiPrediction.features.price_momentum_5 > 0 ? '+' : ''}{aiPrediction.features.price_momentum_5}%
+                      </div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-3">
+                      <div className="text-xs text-gray-400">Price Momentum (20)</div>
+                      <div className={`text-lg font-bold ${aiPrediction.features.price_momentum_20 > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {aiPrediction.features.price_momentum_20 > 0 ? '+' : ''}{aiPrediction.features.price_momentum_20}%
+                      </div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-3">
+                      <div className="text-xs text-gray-400">Volatility</div>
+                      <div className="text-lg font-bold text-purple-400">
+                        {aiPrediction.features.volatility}%
+                      </div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-3">
+                      <div className="text-xs text-gray-400">Volume Trend</div>
+                      <div className={`text-lg font-bold ${aiPrediction.features.volume_trend > 0 ? 'text-blue-400' : 'text-gray-400'}`}>
+                        {aiPrediction.features.volume_trend > 0 ? '+' : ''}{aiPrediction.features.volume_trend}%
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-gray-800/50 rounded p-3">
-                    <div className="text-xs text-gray-400">Price Momentum (20)</div>
-                    <div className={`text-lg font-bold ${aiPrediction.features.price_momentum_20 > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {aiPrediction.features.price_momentum_20 > 0 ? '+' : ''}{aiPrediction.features.price_momentum_20}%
-                    </div>
-                  </div>
-                  <div className="bg-gray-800/50 rounded p-3">
-                    <div className="text-xs text-gray-400">Volatility</div>
-                    <div className="text-lg font-bold text-purple-400">
-                      {aiPrediction.features.volatility}%
-                    </div>
-                  </div>
-                  <div className="bg-gray-800/50 rounded p-3">
-                    <div className="text-xs text-gray-400">Volume Trend</div>
-                    <div className={`text-lg font-bold ${aiPrediction.features.volume_trend > 0 ? 'text-blue-400' : 'text-gray-400'}`}>
-                      {aiPrediction.features.volume_trend > 0 ? '+' : ''}{aiPrediction.features.volume_trend}%
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Right: Patterns Detected */}
               <div>
-                <div className="text-sm text-gray-400 mb-3">🎯 Patterns Detected</div>
+                <div className="text-sm text-gray-400 mb-3 font-bold">🎯 Patterns Detected</div>
                 
                 {/* Candlestick Patterns */}
                 {aiPrediction.candlestick_patterns && aiPrediction.candlestick_patterns.length > 0 && (
                   <div className="mb-4">
-                    <div className="text-xs text-gray-500 mb-2">Candlestick:</div>
+                    <div className="text-xs text-gray-500 mb-2">🕯️ Candlestick:</div>
                     <div className="flex flex-wrap gap-2">
                       {aiPrediction.candlestick_patterns.map((p, idx) => (
                         <div
@@ -247,7 +251,7 @@ export default function Dashboard() {
                 {/* Chart Patterns */}
                 {aiPrediction.chart_patterns && aiPrediction.chart_patterns.length > 0 && (
                   <div className="mb-4">
-                    <div className="text-xs text-gray-500 mb-2">Chart Patterns:</div>
+                    <div className="text-xs text-gray-500 mb-2">📊 Chart Patterns:</div>
                     <div className="flex flex-wrap gap-2">
                       {aiPrediction.chart_patterns.map((p, idx) => (
                         <div
