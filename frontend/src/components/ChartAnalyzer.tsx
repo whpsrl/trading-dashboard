@@ -137,30 +137,38 @@ export default function ChartAnalyzer() {
     }
   }, [symbolSearch, availableSymbols]);
 
-  // Load all available symbols from Binance on mount
+  // Load all available symbols - HARDCODED TOP CRYPTO
   useEffect(() => {
-    const loadAllSymbols = async () => {
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        const response = await fetch(`${apiUrl}/api/instruments/binance`);
-        const data = await response.json();
-        
-        if (data.success && data.instruments) {
-          const symbols = data.instruments.map((inst: any) => ({
-            value: inst.symbol,
-            label: inst.name,
-            type: 'crypto'
-          }));
-          setAvailableSymbols(symbols);
-          setFilteredSymbols(symbols);
-        }
-      } catch (error) {
-        console.error('Failed to load symbols:', error);
-        // Keep default hardcoded list if API fails
-      }
-    };
+    const topCryptoSymbols = [
+      { value: 'BTCUSDT', label: 'Bitcoin (BTC/USDT)', type: 'crypto' },
+      { value: 'ETHUSDT', label: 'Ethereum (ETH/USDT)', type: 'crypto' },
+      { value: 'BNBUSDT', label: 'Binance Coin (BNB/USDT)', type: 'crypto' },
+      { value: 'SOLUSDT', label: 'Solana (SOL/USDT)', type: 'crypto' },
+      { value: 'XRPUSDT', label: 'Ripple (XRP/USDT)', type: 'crypto' },
+      { value: 'ADAUSDT', label: 'Cardano (ADA/USDT)', type: 'crypto' },
+      { value: 'DOGEUSDT', label: 'Dogecoin (DOGE/USDT)', type: 'crypto' },
+      { value: 'MATICUSDT', label: 'Polygon (MATIC/USDT)', type: 'crypto' },
+      { value: 'DOTUSDT', label: 'Polkadot (DOT/USDT)', type: 'crypto' },
+      { value: 'LINKUSDT', label: 'Chainlink (LINK/USDT)', type: 'crypto' },
+      { value: 'AVAXUSDT', label: 'Avalanche (AVAX/USDT)', type: 'crypto' },
+      { value: 'ATOMUSDT', label: 'Cosmos (ATOM/USDT)', type: 'crypto' },
+      { value: 'LTCUSDT', label: 'Litecoin (LTC/USDT)', type: 'crypto' },
+      { value: 'UNIUSDT', label: 'Uniswap (UNI/USDT)', type: 'crypto' },
+      { value: 'ETCUSDT', label: 'Ethereum Classic (ETC/USDT)', type: 'crypto' },
+      { value: 'XLMUSDT', label: 'Stellar (XLM/USDT)', type: 'crypto' },
+      { value: 'ALGOUSDT', label: 'Algorand (ALGO/USDT)', type: 'crypto' },
+      { value: 'TRXUSDT', label: 'TRON (TRX/USDT)', type: 'crypto' },
+      { value: 'FILUSDT', label: 'Filecoin (FIL/USDT)', type: 'crypto' },
+      { value: 'AAVEUSDT', label: 'Aave (AAVE/USDT)', type: 'crypto' },
+      { value: 'APTUSDT', label: 'Aptos (APT/USDT)', type: 'crypto' },
+      { value: 'ARBUSDT', label: 'Arbitrum (ARB/USDT)', type: 'crypto' },
+      { value: 'OPUSDT', label: 'Optimism (OP/USDT)', type: 'crypto' },
+      { value: 'INJUSDT', label: 'Injective (INJ/USDT)', type: 'crypto' },
+      { value: 'SUIUSDT', label: 'Sui (SUI/USDT)', type: 'crypto' },
+    ];
     
-    loadAllSymbols();
+    setAvailableSymbols(topCryptoSymbols);
+    setFilteredSymbols(topCryptoSymbols);
   }, []);
 
   const loadChartData = async () => {
