@@ -8,12 +8,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://trading-dashboard-pr
 export default function Dashboard() {
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [timeframe, setTimeframe] = useState('H1');
-  const [price, setPrice] = useState<number | null>(null);
+  const [price, setPrice] = useState(null);
+  const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(true);
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<any>(null);
+  const chartContainerRef = useRef(null);
+  const chartRef = useRef(null);
 
-  const timeframes = ['H1', 'H4', 'D1'];
+  const timeframes = ['M5', 'M15', 'H1', 'H4', 'D1'];
   const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT'];
 
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function Dashboard() {
         if (chartRef.current) {
           chartRef.current.candlestickSeries.setData(data.data);
           setPrice(data.current_price);
+          setPrediction(data.prediction);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -89,15 +91,36 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [symbol, timeframe]);
 
+  const getPredictionColor = (direction) => {
+    if (direction === 'UP') return 'text-green-400';
+    if (direction === 'DOWN') return 'text-red-400';
+    return 'text-yellow-400';
+  };
+
+  const getPredictionBg = (direction) => {
+    if (direction === 'UP') return 'bg-green-900/30 border-green-500';
+    if (direction === 'DOWN') return 'bg-red-900/30 border-red-500';
+    return 'bg-yellow-900/30 border-yellow-500';
+  };
+
+  const getPredictionIcon = (direction) => {
+    if (direction === 'UP') return '↗';
+    if (direction === 'DOWN') return '↘';
+    return '→';
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Trading Dashboard</h1>
-          <p className="text-gray-400">Real-time market analysis</p>
+          <h1 className="text-3xl font-bold mb-2">Trading Dashboard AI</h1>
+          <p className="text-gray-400">Real-time market analysis with AI prediction</p>
         </div>
 
+        {/* Controls */}
         <div className="bg-gray-800 rounded-lg p-4 mb-6 flex flex-wrap gap-4">
+          {/* Symbol Selector */}
           <div>
             <label className="block text-sm text-gray-400 mb-2">Symbol</label>
             <select
@@ -113,6 +136,7 @@ export default function Dashboard() {
             </select>
           </div>
 
+          {/* Timeframe Selector */}
           <div>
             <label className="block text-sm text-gray-400 mb-2">Timeframe</label>
             <div className="flex gap-2">
@@ -132,6 +156,7 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Price Display */}
           {price && (
             <div className="ml-auto">
               <label className="block text-sm text-gray-400 mb-2">Current Price</label>
@@ -142,6 +167,53 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* AI Prediction Panel */}
+        {prediction && (
+          <div className={`rounded-lg p-6 mb-6 border-2 ${getPredictionBg(prediction.direction)}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`text-6xl ${getPredictionColor(prediction.direction)}`}>
+                  {getPredictionIcon(prediction.direction)}
+                </div>
+                <div>
+                  <div className="text-sm text-gray-400 mb-1">AI Prediction</div>
+                  <div className={`text-3xl font-bold ${getPredictionColor(prediction.direction)}`}>
+                    {prediction.direction}
+                  </div>
+                  <div className="text-sm text-gray-400 mt-1">
+                    Confidence: {prediction.confidence}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="text-sm text-gray-400 mb-2">Indicators</div>
+                <div className="space-y-1 text-sm">
+                  <div>RSI: <span className="font-mono text-blue-400">{prediction.indicators.rsi}</span></div>
+                  <div>SMA 20: <span className="font-mono text-purple-400">${prediction.indicators.sma_20.toFixed(2)}</span></div>
+                  <div>Volume: <span className="font-mono text-orange-400">{prediction.indicators.volume_ratio}x</span></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Reasons */}
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              <div className="text-sm text-gray-400 mb-2">Analysis:</div>
+              <div className="flex flex-wrap gap-2">
+                {prediction.reasons.map((reason, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 bg-gray-800 rounded-full text-xs text-gray-300"
+                  >
+                    {reason}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Chart */}
         <div className="bg-gray-800 rounded-lg p-4 relative">
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 rounded-lg z-10">
@@ -151,7 +223,8 @@ export default function Dashboard() {
           <div ref={chartContainerRef} />
         </div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Stats */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-gray-800 rounded-lg p-4">
             <div className="text-sm text-gray-400 mb-1">Active Symbol</div>
             <div className="text-xl font-bold">{symbol}</div>
@@ -159,6 +232,14 @@ export default function Dashboard() {
           <div className="bg-gray-800 rounded-lg p-4">
             <div className="text-sm text-gray-400 mb-1">Timeframe</div>
             <div className="text-xl font-bold">{timeframe}</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-4">
+            <div className="text-sm text-gray-400 mb-1">AI Signal</div>
+            {prediction && (
+              <div className={`text-xl font-bold ${getPredictionColor(prediction.direction)}`}>
+                {prediction.direction} {getPredictionIcon(prediction.direction)}
+              </div>
+            )}
           </div>
           <div className="bg-gray-800 rounded-lg p-4">
             <div className="text-sm text-gray-400 mb-1">Status</div>
