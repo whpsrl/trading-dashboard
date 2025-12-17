@@ -212,18 +212,50 @@ async def get_crypto_data(
     timeframe: str = Query("1h", description="Timeframe"),
     limit: int = Query(100, description="Number of candles")
 ):
-    """Get crypto OHLCV data - frontend compatible (Binance direct)"""
-    # Force Binance direct for crypto (skip intraday service issues)
+    """Get crypto OHLCV data - Binance direct API"""
     try:
-        ohlcv_data = await market_service.get_ohlcv(
-            symbol=symbol,
-            timeframe=timeframe if timeframe != "15m" else "1h",  # Fallback 15m to 1h
-            limit=limit,
-            exchange="binance"
-        )
-        return ohlcv_data
+        import httpx
+        
+        # Binance public API - no auth needed
+        binance_url = "https://api.binance.com/api/v3/klines"
+        
+        # Convert timeframe to Binance format
+        interval_map = {
+            '1h': '1h',
+            '4h': '4h',
+            '1d': '1d',
+            '1w': '1w'
+        }
+        interval = interval_map.get(timeframe, '1h')
+        
+        params = {
+            'symbol': symbol.replace('/', ''),  # BTCUSDT
+            'interval': interval,
+            'limit': min(limit, 1000)
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(binance_url, params=params)
+            response.raise_for_status()
+            
+            raw_data = response.json()
+            
+            # Format: [timestamp, open, high, low, close, volume, ...]
+            formatted = {
+                'data': [{
+                    'timestamp': int(item[0]),
+                    'open': float(item[1]),
+                    'high': float(item[2]),
+                    'low': float(item[3]),
+                    'close': float(item[4]),
+                    'volume': float(item[5])
+                } for item in raw_data]
+            }
+            
+            return formatted
+            
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Binance API error: {str(e)}")
 
 
 @router.get("/forex/{symbol}")
