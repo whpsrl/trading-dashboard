@@ -6,11 +6,11 @@ import os
 # Importa TUTTE le route esistenti
 # ========================
 
-# AI Analysis Router (NUOVO)
-from app.ai_analysis import routes as ai_analysis_routes
+# Market Data Router (già esiste - usa router.py)
+from app.market_data.router import router as market_data_router
 
-# Market Data Router (già esiste)
-from app.market_data import routes as market_data_routes
+# AI Analysis Router (NUOVO - usa routes.py)
+from app.ai_analysis.routes import router as ai_analysis_router
 
 app = FastAPI(
     title="Trading Dashboard API",
@@ -41,14 +41,14 @@ app.add_middleware(
 
 # 1. Market Data (già esistente)
 app.include_router(
-    market_data_routes.router,
+    market_data_router,
     prefix="/api/v1/market-data",
     tags=["📊 Market Data"]
 )
 
 # 2. AI Analysis (NUOVO)
 app.include_router(
-    ai_analysis_routes.router,
+    ai_analysis_router,
     prefix="/api/v1/ai",
     tags=["🤖 AI Analysis"]
 )
