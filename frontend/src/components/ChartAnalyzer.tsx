@@ -13,8 +13,31 @@ interface OHLCVData {
 }
 
 const SYMBOLS = [
+  // Crypto
   { value: 'BTCUSDT', label: 'Bitcoin (BTC/USDT)', type: 'crypto' },
   { value: 'ETHUSDT', label: 'Ethereum (ETH/USDT)', type: 'crypto' },
+  { value: 'BNBUSDT', label: 'Binance Coin (BNB/USDT)', type: 'crypto' },
+  { value: 'SOLUSDT', label: 'Solana (SOL/USDT)', type: 'crypto' },
+  { value: 'XRPUSDT', label: 'Ripple (XRP/USDT)', type: 'crypto' },
+  { value: 'ADAUSDT', label: 'Cardano (ADA/USDT)', type: 'crypto' },
+  { value: 'DOGEUSDT', label: 'Dogecoin (DOGE/USDT)', type: 'crypto' },
+  { value: 'MATICUSDT', label: 'Polygon (MATIC/USDT)', type: 'crypto' },
+  { value: 'DOTUSDT', label: 'Polkadot (DOT/USDT)', type: 'crypto' },
+  { value: 'LINKUSDT', label: 'Chainlink (LINK/USDT)', type: 'crypto' },
+  // Forex
+  { value: 'GBPJPY', label: 'GBP/JPY', type: 'forex' },
+  { value: 'EURUSD', label: 'EUR/USD', type: 'forex' },
+  { value: 'USDJPY', label: 'USD/JPY', type: 'forex' },
+  { value: 'GBPUSD', label: 'GBP/USD', type: 'forex' },
+  { value: 'AUDUSD', label: 'AUD/USD', type: 'forex' },
+  // Stocks
+  { value: 'AAPL', label: 'Apple', type: 'stock' },
+  { value: 'GOOGL', label: 'Google', type: 'stock' },
+  { value: 'MSFT', label: 'Microsoft', type: 'stock' },
+  { value: 'TSLA', label: 'Tesla', type: 'stock' },
+  { value: 'AMZN', label: 'Amazon', type: 'stock' },
+  { value: 'NVDA', label: 'NVIDIA', type: 'stock' },
+  { value: 'META', label: 'Meta', type: 'stock' },
 ];
 
 const TIMEFRAMES = [
@@ -104,7 +127,7 @@ export default function ChartAnalyzer() {
     
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const endpoint = `${apiUrl}/api/v1/market-data/${selectedSymbol.type}/${selectedSymbol.value}?timeframe=${selectedTimeframe.value}&limit=100`;
+      const endpoint = `${apiUrl}/api/v1/market-data/${selectedSymbol.type}/${selectedSymbol.value}?timeframe=${selectedTimeframe.value}&limit=500`;
       
       console.log('🔍 Fetching from:', endpoint);
       

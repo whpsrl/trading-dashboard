@@ -264,17 +264,12 @@ async def get_forex_data(
     timeframe: str = Query("1h", description="Timeframe"),
     limit: int = Query(100, description="Number of candles")
 ):
-    """Get forex OHLCV data - frontend compatible"""
-    # Convert GBP_JPY to GBP/JPY format if needed
-    if '_' in symbol:
-        symbol = symbol.replace('_', '/')
-    
-    return await get_ohlcv(
-        symbol=symbol,
-        timeframe=timeframe,
-        limit=limit,
-        asset_type="forex",
-        exchange="yahoo"
+    """Get forex OHLCV data - Limited support"""
+    # Forex requires external API like OANDA or Alpha Vantage
+    # For now, return error with clear message
+    raise HTTPException(
+        status_code=501,
+        detail="Forex data temporarily unavailable. Please use crypto symbols (BTC, ETH, SOL, etc.)"
     )
 
 
@@ -284,11 +279,10 @@ async def get_stock_data(
     timeframe: str = Query("1h", description="Timeframe"),
     limit: int = Query(100, description="Number of candles")
 ):
-    """Get stock OHLCV data - frontend compatible"""
-    return await get_ohlcv(
-        symbol=symbol,
-        timeframe=timeframe,
-        limit=limit,
-        asset_type="stock",
-        exchange="yahoo"
+    """Get stock OHLCV data - Limited support"""
+    # Stocks require Yahoo Finance or similar
+    # For now, return error with clear message
+    raise HTTPException(
+        status_code=501,
+        detail="Stock data temporarily unavailable. Please use crypto symbols (BTC, ETH, SOL, etc.)"
     )
