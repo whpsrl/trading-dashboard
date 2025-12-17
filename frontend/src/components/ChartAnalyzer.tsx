@@ -15,16 +15,9 @@ interface OHLCVData {
 const SYMBOLS = [
   { value: 'BTCUSDT', label: 'Bitcoin (BTC/USDT)', type: 'crypto' },
   { value: 'ETHUSDT', label: 'Ethereum (ETH/USDT)', type: 'crypto' },
-  { value: 'GBP_JPY', label: 'GBP/JPY', type: 'forex' },
-  { value: 'EUR_USD', label: 'EUR/USD', type: 'forex' },
-  { value: 'GOOGL', label: 'Google', type: 'stock' },
-  { value: 'AAPL', label: 'Apple', type: 'stock' },
 ];
 
 const TIMEFRAMES = [
-  { value: '1m', label: '1 Minute' },
-  { value: '5m', label: '5 Minutes' },
-  { value: '15m', label: '15 Minutes' },
   { value: '1h', label: '1 Hour' },
   { value: '4h', label: '4 Hours' },
   { value: '1d', label: '1 Day' },
@@ -39,9 +32,10 @@ const PRESET_PROMPTS = [
 
 export default function ChartAnalyzer() {
   const [selectedSymbol, setSelectedSymbol] = useState(SYMBOLS[0]);
-  const [selectedTimeframe, setSelectedTimeframe] = useState(TIMEFRAMES[2]); // 15m default
+  const [selectedTimeframe, setSelectedTimeframe] = useState(TIMEFRAMES[0]);
   const [chartData, setChartData] = useState<OHLCVData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [prompt, setPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
@@ -50,7 +44,6 @@ export default function ChartAnalyzer() {
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
 
-  // Inizializza il grafico
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -105,14 +98,16 @@ export default function ChartAnalyzer() {
     };
   }, []);
 
-  // Carica dati dal backend
   const loadChartData = async () => {
     setLoading(true);
+    setError('');
+    
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const endpoint = `${apiUrl}/api/v1/market-data/${selectedSymbol.type}/${selectedSymbol.value}?timeframe=${selectedTimeframe.value}&limit=200`;
+      const endpoint = `${apiUrl}/api/v1/market-data/${selectedSymbol.type}/${selectedSymbol.value}?timeframe=${selectedTimeframe.value}&limit=100`;
       
-      console.log('🔍 Fetching:', endpoint);
+      console.log('🔍 Fetching from:', endpoint);
+      
       const response = await fetch(endpoint);
       
       if (!response.ok) {
@@ -120,49 +115,68 @@ export default function ChartAnalyzer() {
       }
       
       const data = await response.json();
-      console.log('📦 Backend response:', data);
-      console.log('📊 Data keys:', Object.keys(data));
+      console.log('📦 Response:', data);
       
-      // Handle different response formats
-      let ohlcvArray = data.data || data.candles || data;
+      // Try different response formats
+      let rawData = data.data || data.candles || data.ohlcv || data;
       
-      if (!Array.isArray(ohlcvArray)) {
-        console.error('❌ Data is not array:', typeof ohlcvArray);
-        throw new Error('Invalid data format from backend');
+      if (!Array.isArray(rawData)) {
+        console.error('❌ Not an array:', rawData);
+        throw new Error('Invalid response format');
       }
       
-      console.log(`✅ Found ${ohlcvArray.length} candles`);
+      console.log(`✅ Got ${rawData.length} candles`);
       
-      if (ohlcvArray.length > 0) {
-        console.log('📌 First candle:', ohlcvArray[0]);
+      if (rawData.length === 0) {
+        throw new Error('No data available');
       }
       
-      const formattedData: OHLCVData[] = ohlcvArray.map((item: any) => ({
-        time: (new Date(item.timestamp || item.time || item[0]).getTime() / 1000) as UTCTimestamp,
-        open: parseFloat(item.open || item[1]),
-        high: parseFloat(item.high || item[2]),
-        low: parseFloat(item.low || item[3]),
-        close: parseFloat(item.close || item[4]),
-        volume: parseFloat(item.volume || item[5] || 0),
-      }));
+      console.log('📌 Sample candle:', rawData[0]);
       
-      console.log('✨ Formatted data:', formattedData.slice(0, 2));
+      const formattedData: OHLCVData[] = rawData.map((item: any) => {
+        // Handle different timestamp formats
+        let timestamp;
+        if (item.timestamp) {
+          timestamp = new Date(item.timestamp).getTime() / 1000;
+        } else if (item.time) {
+          timestamp = typeof item.time === 'number' ? item.time : new Date(item.time).getTime() / 1000;
+        } else if (Array.isArray(item) && item.length >= 6) {
+          // [timestamp, open, high, low, close, volume]
+          timestamp = item[0] / 1000;
+        } else {
+          throw new Error('Cannot find timestamp in data');
+        }
+        
+        return {
+          time: timestamp as UTCTimestamp,
+          open: parseFloat(item.open || item[1] || 0),
+          high: parseFloat(item.high || item[2] || 0),
+          low: parseFloat(item.low || item[3] || 0),
+          close: parseFloat(item.close || item[4] || 0),
+          volume: parseFloat(item.volume || item[5] || 0),
+        };
+      });
+      
+      // Sort by time
+      formattedData.sort((a, b) => a.time - b.time);
+      
+      console.log('✨ Formatted:', formattedData.slice(0, 2));
       
       setChartData(formattedData);
       
-      if (candlestickSeriesRef.current) {
+      if (candlestickSeriesRef.current && formattedData.length > 0) {
         candlestickSeriesRef.current.setData(formattedData);
-        console.log('🎨 Chart updated with data!');
+        console.log('🎨 Chart updated!');
       }
-    } catch (error) {
-      console.error('❌ Error loading chart data:', error);
-      alert(`Failed to load chart: ${error}`);
+      
+    } catch (err: any) {
+      console.error('❌ Error:', err);
+      setError(err.message || 'Failed to load data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Analizza con AI
   const analyzeWithAI = async (customPrompt?: string) => {
     if (!chartData.length) {
       alert('Carica prima i dati del grafico');
@@ -175,7 +189,6 @@ export default function ChartAnalyzer() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       
-      // Prepara i dati per l'AI
       const marketContext = {
         symbol: selectedSymbol.label,
         timeframe: selectedTimeframe.label,
@@ -233,7 +246,6 @@ Fornisci un'analisi dettagliata, professionale e actionable.`;
       <div className="flex flex-col gap-4 bg-gray-800 p-6 rounded-lg">
         <h1 className="text-3xl font-bold text-white">Chart Analyzer</h1>
         
-        {/* Selettori */}
         <div className="flex gap-4 flex-wrap">
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-400">Symbol</label>
@@ -275,18 +287,27 @@ Fornisci un'analisi dettagliata, professionale e actionable.`;
             </button>
           </div>
         </div>
+        
+        {error && (
+          <div className="px-4 py-3 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
+            ❌ {error}
+          </div>
+        )}
+        
+        {chartData.length > 0 && (
+          <div className="text-sm text-gray-400">
+            ✅ Loaded {chartData.length} candles
+          </div>
+        )}
       </div>
 
-      {/* Grafico */}
       <div className="bg-gray-800 p-4 rounded-lg">
-        <div ref={chartContainerRef} className="w-full" />
+        <div ref={chartContainerRef} className="w-full" style={{ minHeight: '500px' }} />
       </div>
 
-      {/* AI Analysis Interface */}
       <div className="flex flex-col gap-4 bg-gray-800 p-6 rounded-lg">
         <h2 className="text-xl font-bold text-white">AI Analysis</h2>
         
-        {/* Preset Buttons */}
         <div className="flex gap-2 flex-wrap">
           {PRESET_PROMPTS.map((preset) => (
             <button
@@ -303,7 +324,6 @@ Fornisci un'analisi dettagliata, professionale e actionable.`;
           ))}
         </div>
 
-        {/* Custom Prompt */}
         <div className="flex flex-col gap-2">
           <label className="text-sm text-gray-400">Custom Analysis Request</label>
           <textarea
@@ -322,7 +342,6 @@ Fornisci un'analisi dettagliata, professionale e actionable.`;
           </button>
         </div>
 
-        {/* AI Response */}
         {aiResponse && (
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-400">AI Analysis Result</label>
