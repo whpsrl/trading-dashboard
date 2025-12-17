@@ -5,11 +5,40 @@ import { createChart, ColorType } from 'lightweight-charts';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://trading-dashboard-production-7a5d.up.railway.app';
 
+interface Pattern {
+  pattern: string;
+  signal: string;
+  strength: number;
+}
+
+interface SupportResistance {
+  type: string;
+  price: number;
+  touches: number;
+}
+
+interface AIPrediction {
+  direction: string;
+  confidence: number;
+  score?: number;
+  ml_score?: number;
+  patterns_detected?: string[];
+  candlestick_patterns?: Pattern[];
+  chart_patterns?: Pattern[];
+  support_resistance?: SupportResistance[];
+  features?: {
+    price_momentum_5: number;
+    price_momentum_20: number;
+    volatility: number;
+    volume_trend: number;
+  };
+}
+
 export default function Dashboard() {
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [timeframe, setTimeframe] = useState('H1');
   const [price, setPrice] = useState<number | null>(null);
-  const [aiPrediction, setAiPrediction] = useState<any>(null);
+  const [aiPrediction, setAiPrediction] = useState<AIPrediction | null>(null);
   const [loading, setLoading] = useState(true);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
