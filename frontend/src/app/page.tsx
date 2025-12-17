@@ -199,14 +199,14 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* AI Prediction Panel - BIG ARROW */}
+        {/* AI Prediction Panel */}
         {aiPrediction && (
           <div className={`rounded-lg p-6 mb-6 border-2 ${getPredictionBg(aiPrediction.direction)}`}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left: Main Prediction with BIG ARROW */}
+              {/* Left: Main Prediction */}
               <div>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className={`text-8xl font-bold ${getPredictionColor(aiPrediction.direction)}`}>
+                  <div className={`text-7xl ${getPredictionColor(aiPrediction.direction)}`}>
                     {getPredictionIcon(aiPrediction.direction)}
                   </div>
                   <div>
@@ -258,12 +258,12 @@ export default function Dashboard() {
 
               {/* Right: Patterns Detected */}
               <div>
-                <div className="text-sm text-gray-400 mb-3 font-bold">🎯 Patterns Detected</div>
+                <div className="text-sm text-gray-400 mb-3">🎯 Patterns Detected</div>
                 
                 {/* Candlestick Patterns */}
                 {aiPrediction.candlestick_patterns && aiPrediction.candlestick_patterns.length > 0 && (
                   <div className="mb-4">
-                    <div className="text-xs text-gray-500 mb-2">🕯️ Candlestick:</div>
+                    <div className="text-xs text-gray-500 mb-2">Candlestick:</div>
                     <div className="flex flex-wrap gap-2">
                       {aiPrediction.candlestick_patterns.map((p, idx) => (
                         <div
@@ -280,7 +280,7 @@ export default function Dashboard() {
                 {/* Chart Patterns */}
                 {aiPrediction.chart_patterns && aiPrediction.chart_patterns.length > 0 && (
                   <div className="mb-4">
-                    <div className="text-xs text-gray-500 mb-2">📊 Chart Patterns:</div>
+                    <div className="text-xs text-gray-500 mb-2">Chart Patterns:</div>
                     <div className="flex flex-wrap gap-2">
                       {aiPrediction.chart_patterns.map((p, idx) => (
                         <div
