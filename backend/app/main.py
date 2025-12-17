@@ -7,7 +7,7 @@ import os
 # ========================
 
 # AI Analysis Router (NUOVO)
-from app.ai_analysis import ai_routes
+from app.ai_analysis import routes as ai_analysis_routes
 
 # Market Data Router (già esiste)
 from app.market_data import routes as market_data_routes
@@ -48,7 +48,7 @@ app.include_router(
 
 # 2. AI Analysis (NUOVO)
 app.include_router(
-    ai_routes.router,
+    ai_analysis_routes.router,
     prefix="/api/v1/ai",
     tags=["🤖 AI Analysis"]
 )
