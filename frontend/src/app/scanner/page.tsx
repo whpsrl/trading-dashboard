@@ -1,4 +1,4 @@
-import MarketScanner from '@/components/MarketScannerV2';
+import MarketScanner from '@/components/MarketScannerv2';
 
 export default function ScannerPage() {
   return (
