@@ -24,7 +24,7 @@ interface ScanResponse {
   results: ScanResult[];
 }
 
-export default function MarketScannerV2() {
+export default function marketscannerv2() {
   const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState<ScanResult[]>([]);
   const [scanInfo, setScanInfo] = useState<any>(null);

@@ -1,6 +1,6 @@
 'use client';
 
-export default function MarketScanner() {
+export default function marketscanner() {
   return (
     <div style={{
       minHeight: '100vh',
