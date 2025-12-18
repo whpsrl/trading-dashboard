@@ -38,9 +38,39 @@ class MarketScannerService:
         """Check if scanner is available"""
         return self.client is not None
     
-    async def get_crypto_list(self) -> List[str]:
-        """Get list of crypto symbols to scan"""
-        # Top 30 crypto per market cap
+    async def get_crypto_list(self, mode: str = "top30") -> List[str]:
+        """
+        Get list of crypto symbols to scan
+        
+        Args:
+            mode: "top30" (default) or "all" (tutte le USDT pairs Binance)
+        """
+        
+        if mode == "all":
+            # Recupera TUTTE le crypto USDT da Binance
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    response = await client.get("https://api.binance.com/api/v3/exchangeInfo")
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        all_symbols = []
+                        
+                        for symbol_info in data.get('symbols', []):
+                            if (symbol_info.get('symbol', '').endswith('USDT') and 
+                                symbol_info.get('status') == 'TRADING' and
+                                symbol_info.get('quoteAsset') == 'USDT'):
+                                all_symbols.append(symbol_info.get('symbol'))
+                        
+                        logger.info(f"📊 Loaded {len(all_symbols)} USDT pairs from Binance")
+                        return all_symbols
+                    else:
+                        logger.warning("⚠️ Failed to fetch Binance symbols, using top 30")
+                        
+            except Exception as e:
+                logger.error(f"❌ Error fetching all symbols: {e}")
+        
+        # Default: Top 30 crypto per market cap
         return [
             "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT",
             "ADAUSDT", "DOGEUSDT", "AVAXUSDT", "DOTUSDT", "MATICUSDT",
@@ -200,7 +230,8 @@ Formato JSON:
         self,
         timeframe: str = "1h",
         min_score: float = 7.0,
-        max_concurrent: int = 3
+        max_concurrent: int = 3,
+        mode: str = "top30"
     ) -> List[Dict]:
         """
         Full market scan with AI analysis
@@ -209,6 +240,7 @@ Formato JSON:
             timeframe: candlestick timeframe
             min_score: minimum score to include
             max_concurrent: parallel requests limit
+            mode: "top30" (veloce) o "all" (tutte le crypto, ~500+)
         
         Returns:
             List of valid setups sorted by score
@@ -218,9 +250,9 @@ Formato JSON:
             logger.error("❌ Scanner not available - AI not configured")
             return []
         
-        logger.info(f"🚀 Starting market scan: timeframe={timeframe}, min_score={min_score}")
+        logger.info(f"🚀 Starting market scan: mode={mode}, timeframe={timeframe}, min_score={min_score}")
         
-        symbols = await self.get_crypto_list()
+        symbols = await self.get_crypto_list(mode=mode)
         logger.info(f"📊 Scanning {len(symbols)} cryptocurrencies...")
         
         results = []
