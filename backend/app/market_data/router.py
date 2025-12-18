@@ -14,7 +14,58 @@ try:
 except ImportError:
     YAHOO_AVAILABLE = False
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1/market-data")
+
+@router.get("/")
+async def get_all_market_data():
+    """
+    Get aggregated market data from all sources
+    Returns: crypto, forex, and stock data in one response
+    """
+    try:
+        import httpx
+        from datetime import datetime
+        
+        result = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "crypto": {},
+            "forex": {},
+            "stocks": {}
+        }
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            # Bitcoin from Binance
+            try:
+                btc_resp = await client.get("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT")
+                btc_data = btc_resp.json()
+                result["crypto"]["BTCUSDT"] = {
+                    "price": float(btc_data["lastPrice"]),
+                    "change_24h": float(btc_data["priceChangePercent"]),
+                    "volume": float(btc_data["volume"]),
+                    "high_24h": float(btc_data["highPrice"]),
+                    "low_24h": float(btc_data["lowPrice"]),
+                    "source": "Binance"
+                }
+            except Exception as e:
+                result["crypto"]["BTCUSDT"] = {"error": str(e)}
+            
+            # Ethereum from Binance
+            try:
+                eth_resp = await client.get("https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT")
+                eth_data = eth_resp.json()
+                result["crypto"]["ETHUSDT"] = {
+                    "price": float(eth_data["lastPrice"]),
+                    "change_24h": float(eth_data["priceChangePercent"]),
+                    "volume": float(eth_data["volume"]),
+                    "source": "Binance"
+                }
+            except Exception as e:
+                result["crypto"]["ETHUSDT"] = {"error": str(e)}
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Market data error: {str(e)}")
 
 @router.get("/price")
 async def get_price(

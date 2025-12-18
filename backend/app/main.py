@@ -46,7 +46,6 @@ app.add_middleware(
 # 1. Market Data (già esistente)
 app.include_router(
     market_data_router,
-    prefix="/api/v1/market-data",
     tags=["📊 Market Data"]
 )
 
@@ -84,7 +83,7 @@ async def root():
         "endpoints": {
             "documentation": "/docs",
             "health": "/api/v1/health",
-            "market_data": "/api/v1/market-data",
+            "market_data": "/api/v1/market-data",  # Fixed path
             "ai_analyze": "/api/v1/ai/analyze",
             "ai_health": "/api/v1/ai/health"
         }
