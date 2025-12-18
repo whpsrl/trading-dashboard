@@ -33,6 +33,7 @@ export default function MarketScanner() {
   const [timeframe, setTimeframe] = useState('1h');
   const [minScore, setMinScore] = useState(7.0);
   const [topN, setTopN] = useState(10);
+  const [scanMode, setScanMode] = useState('top30'); // NEW
 
   const startScan = async () => {
     setScanning(true);
@@ -41,7 +42,7 @@ export default function MarketScanner() {
     
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://trading-dashboard-production-79d9.up.railway.app';
-      const url = `${apiUrl}/api/scanner/scan?timeframe=${timeframe}&min_score=${minScore}&top_n=${topN}`;
+      const url = `${apiUrl}/api/scanner/scan?timeframe=${timeframe}&min_score=${minScore}&top_n=${topN}&mode=${scanMode}`;
       
       const response = await fetch(url, {
         method: 'POST',
@@ -87,7 +88,23 @@ export default function MarketScanner() {
       <div className="bg-gray-800 rounded-lg p-6 space-y-4">
         <h2 className="text-xl font-semibold text-white mb-4">⚙️ Impostazioni Scan</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Scan Mode */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Modalità Scan
+            </label>
+            <select
+              value={scanMode}
+              onChange={(e) => setScanMode(e.target.value)}
+              className="w-full bg-gray-700 text-white rounded px-3 py-2 border border-gray-600"
+              disabled={scanning}
+            >
+              <option value="top30">Top 30 (veloce)</option>
+              <option value="all">TUTTE (~400+ pairs)</option>
+            </select>
+          </div>
+
           {/* Timeframe */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">

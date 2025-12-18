@@ -15,7 +15,8 @@ router = APIRouter(prefix="/api/scanner", tags=["scanner"])
 async def scan_market(
     timeframe: str = Query("1h", description="Timeframe: 1h, 4h, 1d"),
     min_score: float = Query(7.0, description="Min score (1-10)", ge=1, le=10),
-    top_n: int = Query(10, description="Top N results", ge=1, le=30)
+    top_n: int = Query(10, description="Top N results", ge=1, le=30),
+    mode: str = Query("top30", description="Scan mode: top30 or all")
 ):
     """
     🚀 **FULL MARKET SCAN** - Analizza tutte le crypto con AI
@@ -59,12 +60,13 @@ async def scan_market(
     try:
         start_time = datetime.utcnow()
         
-        logger.info(f"🚀 Starting market scan: {timeframe}, min_score={min_score}")
+        logger.info(f"🚀 Starting market scan: mode={mode}, timeframe={timeframe}, min_score={min_score}")
         
         # Run scan
         results = await scanner_service.scan_market(
             timeframe=timeframe,
-            min_score=min_score
+            min_score=min_score,
+            mode=mode
         )
         
         end_time = datetime.utcnow()
