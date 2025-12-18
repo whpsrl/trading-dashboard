@@ -15,9 +15,6 @@ from app.ai_analysis.routes import router as ai_analysis_router
 # Instruments Router (NUOVO - lista simboli disponibili)
 from app.instruments.routes import router as instruments_router
 
-# Market Scanner Router (NUOVO - AI scan completo)
-from app.market_scanner.router import router as scanner_router
-
 app = FastAPI(
     title="Trading Dashboard API",
     description="Real-time market data aggregation with AI-powered chart analysis",
@@ -65,12 +62,6 @@ app.include_router(
     tags=["📋 Instruments"]
 )
 
-# 4. Market Scanner (NUOVO - Full AI Scan)
-app.include_router(
-    scanner_router,
-    tags=["🔍 Market Scanner"]
-)
-
 # ========================
 # Root & Health Endpoints
 # ========================
@@ -87,16 +78,14 @@ async def root():
         "features": [
             "Real-time market data aggregation (Binance, OANDA, Finnhub)",
             "AI-powered chart analysis", 
-            "Multi-market support (Crypto, Forex, Stocks)",
-            "🔍 Full market scanner with AI"
+            "Multi-market support (Crypto, Forex, Stocks)"
         ],
         "endpoints": {
             "documentation": "/docs",
             "health": "/api/v1/health",
             "market_data": "/api/v1/market-data",  # Fixed path
             "ai_analyze": "/api/v1/ai/analyze",
-            "ai_health": "/api/v1/ai/health",
-            "scanner": "/api/scanner/scan"
+            "ai_health": "/api/v1/ai/health"
         }
     }
 
