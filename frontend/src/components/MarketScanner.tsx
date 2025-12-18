@@ -295,7 +295,7 @@ export default function MarketScanner() {
       {!scanning && results.length === 0 && scanInfo && (
         <div className="bg-gray-800 rounded-lg p-12 text-center">
           <p className="text-gray-400 text-lg">
-            Nessun setup valido trovato con score >= {minScore}
+            Nessun setup valido trovato con score &gt;= {minScore}
           </p>
           <p className="text-gray-500 text-sm mt-2">
             Prova ad abbassare il min_score o cambiare timeframe
