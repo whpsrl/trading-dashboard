@@ -1,4 +1,4 @@
-import MarketScannerV2 from '@/components/MarketScannerv2';
+import MarketScannerV2 from '@/components/MarketScanner';
 
 // Forza rendering dinamico - NO cache!
 export const dynamic = 'force-dynamic';
