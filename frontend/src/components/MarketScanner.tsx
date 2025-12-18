@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, TrendingUp, TrendingDown, Target, Shield, Zap, Clock, Award } from 'lucide-react';
 
 interface ScanResult {
   symbol: string;
@@ -84,7 +83,7 @@ export default function MarketScanner() {
           <div className="bg-gray-900 rounded-xl p-8">
             <div className="flex items-center gap-4 mb-4">
               <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
-                <Sparkles className="w-8 h-8 text-white" />
+                <span className="text-4xl">✨</span>
               </div>
               <div>
                 <h1 className="text-4xl font-bold text-white mb-2">
@@ -123,7 +122,7 @@ export default function MarketScanner() {
         {/* Settings Panel */}
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6 mb-8">
           <div className="flex items-center gap-3 mb-6">
-            <Zap className="w-6 h-6 text-yellow-400" />
+            <span className="text-2xl">⚡</span>
             <h2 className="text-2xl font-bold text-white">Scan Configuration</h2>
           </div>
           
@@ -216,7 +215,7 @@ export default function MarketScanner() {
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
-                <Sparkles className="w-5 h-5" />
+                <span className="text-xl">✨</span>
                 Launch Full Market Scan
               </span>
             )}
@@ -268,7 +267,7 @@ export default function MarketScanner() {
         {results.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center gap-3 mb-6">
-              <Award className="w-7 h-7 text-yellow-400" />
+              <span className="text-3xl">🏆</span>
               <h2 className="text-3xl font-bold text-white">
                 Top {results.length} Trading Opportunities
               </h2>
@@ -311,11 +310,9 @@ export default function MarketScanner() {
                               ? 'bg-green-500/20 text-green-400 border border-green-500/50' 
                               : 'bg-red-500/20 text-red-400 border border-red-500/50'
                           }`}>
-                            {result.direction === 'LONG' ? (
-                              <TrendingUp className="w-4 h-4" />
-                            ) : (
-                              <TrendingDown className="w-4 h-4" />
-                            )}
+                            <span className="text-lg">
+                              {result.direction === 'LONG' ? '↗' : '↘'}
+                            </span>
                             {result.direction}
                           </span>
                           <div className="flex items-center gap-1 px-3 py-1 bg-yellow-500/20 rounded-lg border border-yellow-500/50">
@@ -340,7 +337,7 @@ export default function MarketScanner() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                     <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700/50">
                       <div className="flex items-center gap-2 mb-2">
-                        <Target className="w-4 h-4 text-blue-400" />
+                        <span className="text-blue-400">🎯</span>
                         <span className="text-gray-400 text-xs font-semibold">ENTRY</span>
                       </div>
                       <p className="text-white font-bold text-lg">${result.entry.toFixed(2)}</p>
@@ -348,7 +345,7 @@ export default function MarketScanner() {
                     
                     <div className="bg-gray-900/50 rounded-xl p-4 border border-red-500/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <Shield className="w-4 h-4 text-red-400" />
+                        <span className="text-red-400">🛡️</span>
                         <span className="text-gray-400 text-xs font-semibold">STOP LOSS</span>
                       </div>
                       <p className="text-red-400 font-bold text-lg">${result.stop_loss.toFixed(2)}</p>
@@ -372,7 +369,7 @@ export default function MarketScanner() {
                   {/* Confluences */}
                   <div className="mb-4">
                     <p className="text-gray-400 text-sm font-semibold mb-3 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-yellow-400" />
+                      <span className="text-yellow-400">⚡</span>
                       Technical Confluences:
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -402,7 +399,7 @@ export default function MarketScanner() {
         {!scanning && results.length === 0 && scanInfo && (
           <div className="bg-gray-800/30 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-16 text-center">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-700/50 rounded-full mb-6">
-              <Clock className="w-10 h-10 text-gray-400" />
+              <span className="text-5xl">⏰</span>
             </div>
             <p className="text-gray-300 text-xl font-semibold mb-2">
               No valid setups found with score &gt;= {minScore}
