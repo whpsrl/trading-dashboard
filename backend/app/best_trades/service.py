@@ -137,14 +137,23 @@ class BestTradesService:
             else:
                 stop_loss = current_price - (atr * 2)
             
-            # Targets: resistance levels or ATR multiples
+            # Targets: resistance levels or ATR multiples (più ambiziosi)
             resistance_levels = sr_data.get('resistance_levels', [])
             if resistance_levels:
-                target_1 = resistance_levels[0]
-                target_2 = resistance_levels[1] if len(resistance_levels) > 1 else target_1 * 1.05
+                # Usa resistance ma con margine maggiore
+                target_1 = resistance_levels[0] if len(resistance_levels) > 0 else current_price + (atr * 5)
+                # Target 2 cerca resistance più lontana o estende significativamente
+                if len(resistance_levels) > 1:
+                    target_2 = resistance_levels[1]
+                elif len(resistance_levels) > 0:
+                    # Estende oltre la resistance del 3-5%
+                    target_2 = resistance_levels[0] * 1.04
+                else:
+                    target_2 = current_price + (atr * 10)
             else:
-                target_1 = current_price + (atr * 3)
-                target_2 = current_price + (atr * 5)
+                # Senza S/R usa ATR multipli più ambiziosi
+                target_1 = current_price + (atr * 5)   # Era 3, ora 5
+                target_2 = current_price + (atr * 10)  # Era 5, ora 10
             
         elif direction == 'SHORT':
             # Entry: current price or near resistance
