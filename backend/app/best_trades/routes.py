@@ -8,7 +8,8 @@ from typing import List, Dict, Optional
 import logging
 
 from .service import best_trades_service
-from ..market_data.service import market_service
+from ..market_data.unified_service import unified_market_service
+from ..market_data.market_universe import get_scan_symbols, SCAN_PRESETS
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -106,86 +107,81 @@ async def analyze_single_symbol(
 
 @router.get("/scan", response_model=BestTradesResponse)
 async def scan_market_for_best_trades(
-    exchange: str = Query("binance", description="Exchange to scan"),
+    preset: str = Query("quick", description="Scan preset: quick/balanced/full"),
     timeframe: str = Query("1h", description="Candle timeframe"),
-    min_score: float = Query(60, ge=0, le=100, description="Minimum score threshold"),
-    symbols: Optional[str] = Query(
-        None,
-        description="Comma-separated symbols to scan (leave empty for top 30)"
-    )
+    min_score: float = Query(60, ge=0, le=100, description="Minimum score threshold")
 ):
     """
     Scansiona il mercato per trovare le migliori opportunità di trading
     
-    Args:
-        exchange: Exchange name (binance, oanda, finnhub)
-        timeframe: Candle timeframe (1h, 4h, 1d)
-        min_score: Minimum score (0-100)
-        symbols: Optional comma-separated symbols, default scans top 30
+    Presets:
+    - quick: ~55 simboli (Crypto + Top Stocks + Indices) - ~30 sec
+    - balanced: ~80 simboli (Più stocks + commodities + forex) - ~60 sec  
+    - full: ~150 simboli (Coverage completo) - ~2 min
     
     Returns:
         List of best trade opportunities sorted by score
     """
     try:
         from datetime import datetime
+        import asyncio
         
-        logger.info(f"🚀 Starting market scan: exchange={exchange}, min_score={min_score}")
+        logger.info(f"🚀 Starting {preset} market scan: min_score={min_score}")
         
-        # Determine symbols to scan
-        if symbols:
-            symbol_list = [s.strip() for s in symbols.split(',')]
-        else:
-            # Default top 30 crypto
-            symbol_list = [
-                "BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
-                "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "DOT/USDT", "MATIC/USDT",
-                "LINK/USDT", "UNI/USDT", "ATOM/USDT", "LTC/USDT", "ETC/USDT",
-                "NEAR/USDT", "ALGO/USDT", "ICP/USDT", "FIL/USDT", "APT/USDT",
-                "ARB/USDT", "OP/USDT", "INJ/USDT", "SUI/USDT", "SEI/USDT",
-                "TIA/USDT", "RENDER/USDT", "WLD/USDT", "RUNE/USDT", "THETA/USDT"
-            ]
+        # Get symbols for preset
+        scan_data = get_scan_symbols(preset)
+        metadata = scan_data['metadata']
+        
+        logger.info(f"📊 Scanning {metadata['total_symbols']} assets across all markets...")
+        logger.info(f"⏱️  Estimated time: {metadata['estimated_time']} seconds")
+        logger.info(f"📡 Finnhub calls needed: {metadata['finnhub_calls']}")
+        
+        # Prepare symbols and types
+        all_symbols = []
+        asset_type_map = {}
+        
+        for market_type in ['crypto', 'stocks', 'indices', 'commodities', 'forex']:
+            for item in scan_data[market_type]:
+                symbol = item['symbol']
+                asset_type = item['type']
+                all_symbols.append(symbol)
+                asset_type_map[symbol] = asset_type
         
         # Fetch data function
-        async def fetch_candles(symbol: str, exch: str):
+        async def fetch_candles(symbol: str, asset_type: str):
             try:
-                ohlcv = await market_service.get_ohlcv(
+                candles = await unified_market_service.get_candles(
                     symbol=symbol,
+                    asset_type=asset_type,
                     timeframe=timeframe,
-                    limit=200,
-                    exchange=exch
+                    limit=200
                 )
-                
-                if not ohlcv:
-                    return None
-                
-                return [
-                    {
-                        'timestamp': c[0],
-                        'open': c[1],
-                        'high': c[2],
-                        'low': c[3],
-                        'close': c[4],
-                        'volume': c[5] if len(c) > 5 else 0
-                    }
-                    for c in ohlcv
-                ]
-            except:
+                return candles
+            except Exception as e:
+                logger.error(f"Error fetching {symbol}: {e}")
                 return None
         
         # Scan for opportunities
         opportunities = await best_trades_service.scan_for_best_trades(
-            symbols=symbol_list,
-            exchange=exchange,
+            symbols=all_symbols,
+            exchange="multi",  # Not used anymore
             min_score=min_score,
-            fetch_data_func=fetch_candles
+            fetch_data_func=fetch_candles,
+            asset_types=asset_type_map
         )
+        
+        # Get rate limit status
+        rate_status = unified_market_service.get_rate_limit_status()
+        
+        logger.info(f"🎯 Found {len(opportunities)} opportunities")
+        logger.info(f"📊 Rate limits: Finnhub {rate_status['finnhub']['percentage']}%, OANDA {rate_status['oanda']['percentage']}%")
         
         return BestTradesResponse(
             success=True,
             count=len(opportunities),
             opportunities=opportunities,
             scan_time=datetime.now().isoformat(),
-            message=f"Found {len(opportunities)} opportunities with score >= {min_score}"
+            message=f"Scanned {metadata['total_symbols']} assets - Found {len(opportunities)} opportunities"
         )
         
     except Exception as e:

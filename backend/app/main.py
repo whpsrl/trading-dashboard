@@ -21,6 +21,9 @@ from app.market_scanner.router import router as scanner_router
 # Best Trades Router (NUOVO - Best trade finder con AI)
 from app.best_trades.routes import router as best_trades_router
 
+# Telegram Bot Router (NUOVO - Notifiche Telegram)
+from app.telegram_bot.routes import router as telegram_router
+
 app = FastAPI(
     title="Trading Dashboard API",
     description="Real-time market data aggregation with AI-powered chart analysis",
@@ -79,6 +82,13 @@ app.include_router(
     best_trades_router,
     prefix="/api/best-trades",
     tags=["🎯 Best Trades"]
+)
+
+# 6. Telegram Bot (NUOVO - Notifiche e Alert)
+app.include_router(
+    telegram_router,
+    prefix="/api/telegram",
+    tags=["📱 Telegram Bot"]
 )
 
 # ========================

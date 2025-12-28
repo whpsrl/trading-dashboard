@@ -1,0 +1,130 @@
+"""
+ESEMPIO REALE DI ANALISI
+========================
+
+SIMBOLO: BTC/USDT
+DATA: 28 Dic 2025, 19:00
+PREZZO ATTUALE: $43,150
+
+--- DATI RAW (ultimi 5 candles) ---
+Candle 1: Open: 42,800 | High: 43,000 | Low: 42,750 | Close: 42,900 | Vol: 1,250 BTC
+Candle 2: Open: 42,900 | High: 43,100 | Low: 42,850 | Close: 43,050 | Vol: 1,320 BTC
+Candle 3: Open: 43,050 | High: 43,200 | Low: 43,000 | Close: 43,150 | Vol: 1,450 BTC
+Candle 4: Open: 43,150 | High: 43,300 | Low: 43,100 | Close: 43,180 | Vol: 1,380 BTC
+Candle 5: Open: 43,180 | High: 43,250 | Low: 43,120 | Close: 43,150 | Vol: 1,290 BTC
+
+--- CALCOLO INDICATORI ---
+
+1. RSI (14 periodi)
+   Ultimi 14 closes: [41500, 41800, 42000, 41900, 41700, 42100, 42400, 42600, 42500, 42700, 42900, 43050, 43150, 43180]
+   
+   Gains: [300, 200, 0, 0, 400, 300, 200, 0, 200, 200, 150, 100, 30]
+   Losses: [0, 0, 100, 200, 0, 0, 0, 100, 0, 0, 0, 0, 0]
+   
+   Avg Gain = 148.5
+   Avg Loss = 21.4
+   RS = 148.5 / 21.4 = 6.94
+   RSI = 100 - (100 / (1 + 6.94)) = 87.4
+   
+   ⚠️ RSI = 87.4 → OVERBOUGHT → BEARISH SIGNAL
+   Score: +25 punti BEARISH
+
+2. MACD
+   EMA(12) = 42,850
+   EMA(26) = 42,400
+   MACD Line = 42,850 - 42,400 = 450
+   Signal Line = 420
+   Histogram = 450 - 420 = 30 (positivo)
+   
+   MACD > Signal → BULLISH
+   Ma histogram piccolo → segnale debole
+   Score: +10 punti BULLISH
+
+3. Bollinger Bands (20 periodi, 2σ)
+   Media = 42,950
+   Std Dev = 350
+   Upper Band = 42,950 + (2 * 350) = 43,650
+   Lower Band = 42,950 - (2 * 350) = 42,250
+   
+   Prezzo attuale = 43,150
+   Position = ((43,150 - 42,250) / (43,650 - 42,250)) * 100 = 64.3%
+   
+   Prezzo a metà/alto → NEUTRO
+   Score: 0 punti
+
+4. Support/Resistance
+   Analisi ultimi 100 candles:
+   - Resistance cluster: $43,800 (toccata 4 volte)
+   - Support cluster: $42,600 (toccata 5 volte)
+   
+   Prezzo a $43,150
+   Distanza da resistance = (43,800 - 43,150) / 43,150 = 1.5%
+   
+   ⚠️ Vicino a resistance → BEARISH
+   Score: +20 punti BEARISH
+
+5. Trend Analysis (20 candles)
+   Regressione lineare: Slope = +35 (positivo)
+   R-squared = 0.78 (buona consistenza)
+   
+   Uptrend confermato
+   Score: +15 punti BULLISH
+
+6. Volume
+   Volume medio (20 candles): 1,150 BTC
+   Volume attuale: 1,290 BTC
+   Differenza: +12.2%
+   
+   Volume leggermente sopra media
+   Score: +5 punti
+
+--- SCORING TOTALE ---
+
+Punti BULLISH: 10 (MACD) + 15 (Trend) + 5 (Volume) = 30
+Punti BEARISH: 25 (RSI) + 20 (S/R) = 45
+
+TOTAL SCORE: 55/100 (sotto soglia 60)
+DIRECTION: SHORT (bearish score > bullish)
+CONFIDENCE: 60% (45/(30+45) * 100)
+
+CONFLUENZE:
+- RSI: Overbought (probabile correzione)
+- S/R: Vicino a resistance forte
+Totale: 2 confluenze (DEBOLE)
+
+WARNINGS:
+- MACD: Segnale bullish contrasta con RSI
+- Trend: Uptrend contrasta con segnale SHORT
+
+⚠️ SETUP NON VALIDO
+Motivo: Score < 60 AND segnali contrastanti
+
+RACCOMANDAZIONE:
+"❌ No clear trading opportunity. Conflicting signals between 
+bullish trend and overbought conditions. Wait for clearer setup."
+
+--- SE IL SETUP FOSSE STATO VALIDO ---
+(Score > 60, confluenze > 3)
+
+Entry: $43,150
+Stop Loss: $43,850 (sopra resistance + ATR buffer)
+Target 1: $42,600 (support) → R:R 1:2.5
+Target 2: $42,100 (secondo support) → R:R 1:4.0
+
+→ AI VALIDATION RICHIESTA
+
+Claude AI analizza e risponde:
+{
+  "valid": false,
+  "validation_score": 4,
+  "risk_factors": [
+    "Overbought conditions on RSI",
+    "Low confluence (only 2 factors)",
+    "Conflicting signals between trend and oscillators"
+  ],
+  "recommendation": "Avoid this trade. Wait for RSI to cool down or 
+                     for price to break resistance with volume confirmation."
+}
+
+RISULTATO FINALE: ❌ NO TRADE
+"""

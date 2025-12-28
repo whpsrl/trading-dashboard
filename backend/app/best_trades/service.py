@@ -211,41 +211,140 @@ class BestTradesService:
             return None
         
         try:
-            # Prepare market context for AI
-            recent_candles = candles[-20:]
+            # Prepare comprehensive market context for AI
+            total_candles = len(candles)
             
-            prompt = f"""Sei un trader esperto. Analizza questo setup di trading:
+            # Analisi su più timeframe
+            recent_100 = candles[-100:] if len(candles) >= 100 else candles
+            recent_50 = candles[-50:] if len(candles) >= 50 else candles
+            recent_20 = candles[-20:]
+            
+            # Calcoli statistici avanzati
+            closes_100 = [c['close'] for c in recent_100]
+            highs_100 = [c['high'] for c in recent_100]
+            lows_100 = [c['low'] for c in recent_100]
+            volumes_100 = [c['volume'] for c in recent_100]
+            
+            price_change_100 = ((closes_100[-1] - closes_100[0]) / closes_100[0]) * 100
+            price_change_50 = ((candles[-1]['close'] - candles[-50]['close']) / candles[-50]['close']) * 100 if len(candles) >= 50 else 0
+            price_change_20 = ((candles[-1]['close'] - candles[-20]['close']) / candles[-20]['close']) * 100 if len(candles) >= 20 else 0
+            
+            volatility = (max(highs_100) - min(lows_100)) / min(lows_100) * 100
+            avg_volume = sum(volumes_100) / len(volumes_100)
+            current_volume = candles[-1]['volume']
+            volume_ratio = (current_volume / avg_volume) if avg_volume > 0 else 1
+            
+            # Trova swing highs/lows significativi
+            swing_highs = sorted(highs_100, reverse=True)[:5]
+            swing_lows = sorted(lows_100)[:5]
+            
+            prompt = f"""Sei un trader professionista esperto. Analizza questo setup di trading con tutti i dati disponibili.
 
-**{symbol}**
-Prezzo attuale: ${indicators['current_price']:.2f}
-Direzione: {score_data['direction']}
-Score tecnico: {score_data['total_score']:.1f}/100
+═══════════════════════════════════════════════════════════════
+📊 {symbol} - ANALISI COMPLETA
+═══════════════════════════════════════════════════════════════
 
-**Indicatori Tecnici:**
-- RSI: {indicators.get('rsi', 'N/A')}
-- Trend: {indicators.get('trend', {}).get('direction', 'N/A')} (forza: {indicators.get('trend', {}).get('strength', 0):.0f})
-- MACD: {indicators.get('macd', {})}
+💰 PREZZO CORRENTE: ${indicators['current_price']:.2f}
+🎯 DIREZIONE SUGGERITA: {score_data['direction']}
+⭐ SCORE TECNICO: {score_data['total_score']:.1f}/100
+💪 CONFIDENCE: {score_data['confidence']:.1f}%
 
-**Confluenze trovate:**
-{chr(10).join(f"- {c}" for c in score_data['confluences'])}
+═══════════════════════════════════════════════════════════════
+📈 PERFORMANCE STORICA (ultimi {total_candles} candles)
+═══════════════════════════════════════════════════════════════
 
-**Ultimi 10 candles:**
-{chr(10).join(f"C: {c['close']:.2f} | H: {c['high']:.2f} | L: {c['low']:.2f} | V: {c['volume']:.0f}" for c in recent_candles[-10:])}
+Variazione 100 periodi: {price_change_100:+.2f}%
+Variazione 50 periodi:  {price_change_50:+.2f}%
+Variazione 20 periodi:  {price_change_20:+.2f}%
 
-**DOMANDE:**
-1. Confermi che questo è un setup valido?
-2. Ci sono fattori di rischio non considerati?
-3. Qual è la tua valutazione complessiva (1-10)?
-4. Consigli specifici per questo trade?
+Range totale: ${min(lows_100):.2f} - ${max(highs_100):.2f}
+Volatilità: {volatility:.1f}%
+
+═══════════════════════════════════════════════════════════════
+🔍 INDICATORI TECNICI DETTAGLIATI
+═══════════════════════════════════════════════════════════════
+
+RSI (14): {indicators.get('rsi', 'N/A')}
+  → < 30 = Oversold | > 70 = Overbought
+
+MACD:
+  → MACD Line: {indicators.get('macd', {}).get('macd', 'N/A')}
+  → Signal Line: {indicators.get('macd', {}).get('signal', 'N/A')}
+  → Histogram: {indicators.get('macd', {}).get('histogram', 'N/A')}
+
+Bollinger Bands:
+  → Upper: ${indicators.get('bollinger_bands', {}).get('upper', 0):.2f}
+  → Middle: ${indicators.get('bollinger_bands', {}).get('middle', 0):.2f}
+  → Lower: ${indicators.get('bollinger_bands', {}).get('lower', 0):.2f}
+  → Position: {indicators.get('bollinger_bands', {}).get('position', 50):.1f}%
+  → Bandwidth: {indicators.get('bollinger_bands', {}).get('bandwidth', 0):.2f}%
+
+Trend Analysis:
+  → Direction: {indicators.get('trend', {}).get('direction', 'N/A')}
+  → Strength: {indicators.get('trend', {}).get('strength', 0):.0f}/100
+  → Consistency: {indicators.get('trend', {}).get('consistency', 0):.0f}%
+
+EMA:
+  → EMA(20): ${indicators.get('ema_20', 0):.2f}
+  → EMA(50): ${indicators.get('ema_50', 0):.2f}
+  → EMA(200): ${indicators.get('ema_200', 0):.2f}
+
+Volume Profile:
+  → Volume medio: {avg_volume:.0f}
+  → Volume corrente: {current_volume:.0f}
+  → Ratio: {volume_ratio:.2f}x
+  → Trend: {indicators.get('volume_profile', {}).get('trend', 'N/A')}
+
+Support & Resistance:
+  → Supports: {', '.join([f'${s:.2f}' for s in indicators.get('support_resistance', {}).get('support_levels', [])])}
+  → Resistances: {', '.join([f'${r:.2f}' for r in indicators.get('support_resistance', {}).get('resistance_levels', [])])}
+
+═══════════════════════════════════════════════════════════════
+✅ CONFLUENZE TECNICHE ({len(score_data['confluences'])})
+═══════════════════════════════════════════════════════════════
+{chr(10).join(f"✓ {c}" for c in score_data['confluences'])}
+
+{'═══════════════════════════════════════════════════════════════' if score_data['warnings'] else ''}
+{'⚠️  SEGNALI CONTRASTANTI (' + str(len(score_data['warnings'])) + ')' if score_data['warnings'] else ''}
+{'═══════════════════════════════════════════════════════════════' if score_data['warnings'] else ''}
+{chr(10).join(f"⚠ {w}" for w in score_data['warnings']) if score_data['warnings'] else ''}
+
+═══════════════════════════════════════════════════════════════
+📊 PRICE ACTION - Ultimi 50 Candles
+═══════════════════════════════════════════════════════════════
+
+Swing Highs: {', '.join([f'${h:.2f}' for h in swing_highs])}
+Swing Lows: {', '.join([f'${l:.2f}' for l in swing_lows])}
+
+Dettaglio ultimi 20 candles:
+{chr(10).join(f"#{i}: O:{c['open']:.2f} H:{c['high']:.2f} L:{c['low']:.2f} C:{c['close']:.2f} V:{c['volume']:.0f}" for i, c in enumerate(recent_20, 1))}
+
+═══════════════════════════════════════════════════════════════
+🤖 RICHIESTA ANALISI AI
+═══════════════════════════════════════════════════════════════
+
+Basandoti su TUTTI i dati sopra (non solo gli ultimi candles), analizza:
+
+1. **VALIDITÀ SETUP**: Il setup è davvero valido considerando il contesto storico?
+2. **TIMING**: È il momento giusto per entrare o è meglio aspettare?
+3. **RISK FACTORS**: Quali rischi specifici vedi guardando tutto il quadro?
+4. **OPPORTUNITIES**: Quali opportunità confermi dai dati?
+5. **PRICE TARGETS**: I target suggeritisono realistici considerando la volatilità storica?
+6. **PATTERN**: Vedi pattern di prezzo significativi nei dati storici?
+7. **VOLUME**: Il volume conferma il movimento o c'è divergenza?
 
 Rispondi in formato JSON:
 {{
     "valid": true/false,
     "validation_score": 1-10,
-    "risk_factors": ["fattore1", "fattore2"],
+    "timing": "immediate|wait_for_pullback|wait_for_confirmation|avoid",
+    "risk_factors": ["fattore1", "fattore2", "fattore3"],
     "opportunities": ["opportunità1", "opportunità2"],
-    "recommendation": "Tuo consiglio specifico",
-    "caution": "Avvertenze importanti"
+    "price_targets_realistic": true/false,
+    "patterns_identified": ["pattern1", "pattern2"],
+    "volume_confirmation": "strong|moderate|weak|divergence",
+    "recommendation": "Raccomandazione dettagliata basata sull'analisi completa",
+    "caution": "Avvertenze importanti considerando tutto il contesto"
 }}"""
 
             response = self.client.messages.create(
@@ -326,16 +425,18 @@ Rispondi in formato JSON:
         symbols: List[str],
         exchange: str = "binance",
         min_score: float = 60,
-        fetch_data_func = None
+        fetch_data_func = None,
+        asset_types: Dict[str, str] = None
     ) -> List[Dict]:
         """
         Scan multiple symbols for best trading opportunities
         
         Args:
             symbols: List of trading symbols
-            exchange: Exchange name
+            exchange: Exchange name (legacy, now uses asset_types)
             min_score: Minimum score threshold
             fetch_data_func: Async function to fetch OHLCV data
+            asset_types: Dict mapping symbol -> asset_type (crypto, stock, forex, etc.)
         
         Returns:
             List of best trade opportunities sorted by score
@@ -346,9 +447,14 @@ Rispondi in formato JSON:
         
         for symbol in symbols:
             try:
+                # Determine asset type
+                asset_type = 'crypto'  # default
+                if asset_types and symbol in asset_types:
+                    asset_type = asset_types[symbol]
+                
                 # Fetch candle data
                 if fetch_data_func:
-                    candles = await fetch_data_func(symbol, exchange)
+                    candles = await fetch_data_func(symbol, asset_type)
                 else:
                     logger.warning(f"{symbol}: No data fetch function provided")
                     continue
@@ -357,7 +463,7 @@ Rispondi in formato JSON:
                     continue
                 
                 # Analyze symbol
-                analysis = await self.analyze_symbol(symbol, candles, exchange)
+                analysis = await self.analyze_symbol(symbol, candles, asset_type)
                 
                 if analysis and analysis['score'] >= min_score:
                     results.append(analysis)
