@@ -324,10 +324,10 @@ export default function BestTradesDashboard({ apiUrl }: BestTradesDashboardProps
                     borderBottom: '1px solid #1e2329'
                   }}>
                     <div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem', color: '#ffffff' }}>
                         {opp.symbol}
                       </div>
-                      <div style={{ fontSize: '1.1rem', color: '#888' }}>
+                      <div style={{ fontSize: '1.1rem', color: '#aaa' }}>
                         ${opp.current_price.toFixed(2)}
                       </div>
                     </div>
@@ -381,7 +381,7 @@ export default function BestTradesDashboard({ apiUrl }: BestTradesDashboardProps
                       <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.25rem' }}>
                         CONFIDENCE
                       </div>
-                      <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ffffff' }}>
                         {opp.confidence.toFixed(0)}%
                       </div>
                     </div>
@@ -395,32 +395,32 @@ export default function BestTradesDashboard({ apiUrl }: BestTradesDashboardProps
                     marginBottom: '1rem',
                     fontSize: '0.85rem'
                   }}>
-                    <div style={{ color: '#888', marginBottom: '0.75rem', fontWeight: 'bold' }}>
+                    <div style={{ color: '#fff', marginBottom: '0.75rem', fontWeight: 'bold' }}>
                       📊 TRADE PLAN
                     </div>
-                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                    <div style={{ display: 'grid', gap: '0.5rem', color: '#ffffff' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#888' }}>Entry:</span>
-                        <span style={{ color: '#00ff88' }}>${opp.trade_levels.entry.toFixed(2)}</span>
+                        <span style={{ color: '#aaa' }}>Entry:</span>
+                        <span style={{ color: '#00ff88', fontWeight: 'bold' }}>${opp.trade_levels.entry.toFixed(2)}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#888' }}>Stop Loss:</span>
-                        <span style={{ color: '#ef4444' }}>${opp.trade_levels.stop_loss.toFixed(2)}</span>
+                        <span style={{ color: '#aaa' }}>Stop Loss:</span>
+                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>${opp.trade_levels.stop_loss.toFixed(2)}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#888' }}>Target 1:</span>
-                        <span style={{ color: '#22c55e' }}>
+                        <span style={{ color: '#aaa' }}>Target 1:</span>
+                        <span style={{ color: '#22c55e', fontWeight: 'bold' }}>
                           ${opp.trade_levels.target_1.toFixed(2)} 
-                          <span style={{ fontSize: '0.75rem', marginLeft: '0.25rem' }}>
+                          <span style={{ fontSize: '0.75rem', marginLeft: '0.25rem', color: '#888' }}>
                             (R:R {opp.trade_levels.risk_reward_ratio_t1.toFixed(1)}:1)
                           </span>
                         </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#888' }}>Target 2:</span>
-                        <span style={{ color: '#22c55e' }}>
+                        <span style={{ color: '#aaa' }}>Target 2:</span>
+                        <span style={{ color: '#22c55e', fontWeight: 'bold' }}>
                           ${opp.trade_levels.target_2.toFixed(2)}
-                          <span style={{ fontSize: '0.75rem', marginLeft: '0.25rem' }}>
+                          <span style={{ fontSize: '0.75rem', marginLeft: '0.25rem', color: '#888' }}>
                             (R:R {opp.trade_levels.risk_reward_ratio_t2.toFixed(1)}:1)
                           </span>
                         </span>
@@ -430,7 +430,7 @@ export default function BestTradesDashboard({ apiUrl }: BestTradesDashboardProps
 
                   {/* Confluences */}
                   {opp.confluences.length > 0 && (
-                    <div style={{ fontSize: '0.8rem', color: '#22c55e' }}>
+                    <div style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: '500' }}>
                       ✅ {opp.confluences.length} Confluences
                     </div>
                   )}
