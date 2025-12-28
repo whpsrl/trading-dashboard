@@ -18,6 +18,9 @@ from app.instruments.routes import router as instruments_router
 # Market Scanner Router (NUOVO - AI scan completo)
 from app.market_scanner.router import router as scanner_router
 
+# Best Trades Router (NUOVO - Best trade finder con AI)
+from app.best_trades.routes import router as best_trades_router
+
 app = FastAPI(
     title="Trading Dashboard API",
     description="Real-time market data aggregation with AI-powered chart analysis",
@@ -71,6 +74,13 @@ app.include_router(
     tags=["🔍 Market Scanner"]
 )
 
+# 5. Best Trades (NUOVO - AI Best Trade Finder)
+app.include_router(
+    best_trades_router,
+    prefix="/api/best-trades",
+    tags=["🎯 Best Trades"]
+)
+
 # ========================
 # Root & Health Endpoints
 # ========================
@@ -96,7 +106,8 @@ async def root():
             "market_data": "/api/v1/market-data",  # Fixed path
             "ai_analyze": "/api/v1/ai/analyze",
             "ai_health": "/api/v1/ai/health",
-            "scanner": "/api/scanner/scan"
+            "scanner": "/api/scanner/scan",
+            "best_trades": "/api/best-trades/top"
         }
     }
 
