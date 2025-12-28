@@ -1,9 +1,15 @@
-import MarketScanner from '@/components/MarketScanner';
+'use client';
 
-// Force dynamic rendering - no cache
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+import MarketScanner from '@/components/MarketScanner';
+import Navbar from '@/components/Navbar';
 
 export default function ScannerPage() {
-  return <MarketScanner />;
+  return (
+    <>
+      <Navbar />
+      <main style={{ minHeight: 'calc(100vh - 80px)', background: '#0a0e13' }}>
+        <MarketScanner />
+      </main>
+    </>
+  );
 }
