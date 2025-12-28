@@ -119,15 +119,21 @@ class BestTradesService:
     
     def _calculate_trade_levels(self, indicators: Dict, direction: str) -> Dict:
         """
-        Calculate entry, stop loss, and target levels based on indicators
+        Calculate entry, stop loss, and target levels based on indicators.
+        Targets are realistic and based on actual S/R analysis and trend strength.
         """
         current_price = indicators['current_price']
         atr = indicators.get('atr', current_price * 0.02)  # Default 2% if no ATR
         bb_data = indicators.get('bollinger_bands', {})
         sr_data = indicators.get('support_resistance', {})
+        trend_data = indicators.get('trend', {})
+        
+        # Considera la forza del trend per target più solidi in trend forti
+        trend_strength = trend_data.get('strength', 50) if trend_data else 50
+        # Multiplier: 1.0 (trend debole) -> 1.5 (trend fortissimo)
+        trend_multiplier = 1.0 + (max(trend_strength - 50, 0) / 100)
         
         if direction == 'LONG':
-            # Entry: current price or near support
             entry = current_price
             
             # Stop loss: below nearest support or 2 ATR
@@ -137,26 +143,24 @@ class BestTradesService:
             else:
                 stop_loss = current_price - (atr * 2)
             
-            # Targets: resistance levels or ATR multiples (più ambiziosi)
+            # Targets: basati su resistance REALI identificate nell'analisi
             resistance_levels = sr_data.get('resistance_levels', [])
-            if resistance_levels:
-                # Usa resistance ma con margine maggiore
-                target_1 = resistance_levels[0] if len(resistance_levels) > 0 else current_price + (atr * 5)
-                # Target 2 cerca resistance più lontana o estende significativamente
-                if len(resistance_levels) > 1:
-                    target_2 = resistance_levels[1]
-                elif len(resistance_levels) > 0:
-                    # Estende oltre la resistance del 3-5%
-                    target_2 = resistance_levels[0] * 1.04
-                else:
-                    target_2 = current_price + (atr * 10)
+            
+            if resistance_levels and len(resistance_levels) >= 2:
+                # Abbiamo almeno 2 resistance chiare: usiamole
+                target_1 = resistance_levels[0]
+                target_2 = resistance_levels[1]
+            elif resistance_levels and len(resistance_levels) == 1:
+                # Solo 1 resistance: usala come T1, estendi con Fibonacci per T2
+                target_1 = resistance_levels[0]
+                move = resistance_levels[0] - entry
+                target_2 = entry + (move * 1.618)  # Estensione Fibonacci
             else:
-                # Senza S/R usa ATR multipli più ambiziosi
-                target_1 = current_price + (atr * 5)   # Era 3, ora 5
-                target_2 = current_price + (atr * 10)  # Era 5, ora 10
+                # Nessuna resistance chiara: usa ATR modulato dal trend
+                target_1 = current_price + (atr * 4 * trend_multiplier)
+                target_2 = current_price + (atr * 7 * trend_multiplier)
             
         elif direction == 'SHORT':
-            # Entry: current price or near resistance
             entry = current_price
             
             # Stop loss: above nearest resistance or 2 ATR
@@ -166,14 +170,22 @@ class BestTradesService:
             else:
                 stop_loss = current_price + (atr * 2)
             
-            # Targets: support levels or ATR multiples
+            # Targets: basati su support REALI identificati nell'analisi
             support_levels = sr_data.get('support_levels', [])
-            if support_levels:
+            
+            if support_levels and len(support_levels) >= 2:
+                # Abbiamo almeno 2 support chiari: usiamoli
                 target_1 = support_levels[0]
-                target_2 = support_levels[1] if len(support_levels) > 1 else target_1 * 0.95
+                target_2 = support_levels[1]
+            elif support_levels and len(support_levels) == 1:
+                # Solo 1 support: usalo come T1, estendi con Fibonacci per T2
+                target_1 = support_levels[0]
+                move = entry - support_levels[0]
+                target_2 = entry - (move * 1.618)  # Estensione Fibonacci
             else:
-                target_1 = current_price - (atr * 3)
-                target_2 = current_price - (atr * 5)
+                # Nessun support chiaro: usa ATR modulato dal trend
+                target_1 = current_price - (atr * 4 * trend_multiplier)
+                target_2 = current_price - (atr * 7 * trend_multiplier)
         
         else:  # NEUTRAL
             return {
