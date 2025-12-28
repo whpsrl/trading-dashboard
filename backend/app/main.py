@@ -1,28 +1,61 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ========================
-# Importa TUTTE le route esistenti
+# Importa TUTTE le route esistenti (con fallback sicuri)
 # ========================
 
 # Market Data Router (già esiste - usa router.py)
-from app.market_data.router import router as market_data_router
+try:
+    from app.market_data.router import router as market_data_router
+    MARKET_DATA_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Market data router not available: {e}")
+    MARKET_DATA_AVAILABLE = False
 
 # AI Analysis Router (NUOVO - usa routes.py)
-from app.ai_analysis.routes import router as ai_analysis_router
+try:
+    from app.ai_analysis.routes import router as ai_analysis_router
+    AI_ANALYSIS_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"AI analysis router not available: {e}")
+    AI_ANALYSIS_AVAILABLE = False
 
 # Instruments Router (NUOVO - lista simboli disponibili)
-from app.instruments.routes import router as instruments_router
+try:
+    from app.instruments.routes import router as instruments_router
+    INSTRUMENTS_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Instruments router not available: {e}")
+    INSTRUMENTS_AVAILABLE = False
 
 # Market Scanner Router (NUOVO - AI scan completo)
-from app.market_scanner.router import router as scanner_router
+try:
+    from app.market_scanner.router import router as scanner_router
+    SCANNER_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Scanner router not available: {e}")
+    SCANNER_AVAILABLE = False
 
 # Best Trades Router (NUOVO - Best trade finder con AI)
-from app.best_trades.routes import router as best_trades_router
+try:
+    from app.best_trades.routes import router as best_trades_router
+    BEST_TRADES_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Best trades router not available: {e}")
+    BEST_TRADES_AVAILABLE = False
 
 # Telegram Bot Router (NUOVO - Notifiche Telegram)
-from app.telegram_bot.routes import router as telegram_router
+try:
+    from app.telegram_bot.routes import router as telegram_router
+    TELEGRAM_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Telegram router not available: {e}")
+    TELEGRAM_AVAILABLE = False
 
 app = FastAPI(
     title="Trading Dashboard API",
@@ -49,47 +82,53 @@ app.add_middleware(
 )
 
 # ========================
-# Include ALL Routers
+# Include ALL Routers (solo se disponibili)
 # ========================
 
 # 1. Market Data (già esistente)
-app.include_router(
-    market_data_router,
-    tags=["📊 Market Data"]
-)
+if MARKET_DATA_AVAILABLE:
+    app.include_router(
+        market_data_router,
+        tags=["📊 Market Data"]
+    )
 
 # 2. AI Analysis (NUOVO)
-app.include_router(
-    ai_analysis_router,
-    prefix="/api/v1/ai",
-    tags=["🤖 AI Analysis"]
-)
+if AI_ANALYSIS_AVAILABLE:
+    app.include_router(
+        ai_analysis_router,
+        prefix="/api/v1/ai",
+        tags=["🤖 AI Analysis"]
+    )
 
 # 3. Instruments (NUOVO)
-app.include_router(
-    instruments_router,
-    tags=["📋 Instruments"]
-)
+if INSTRUMENTS_AVAILABLE:
+    app.include_router(
+        instruments_router,
+        tags=["📋 Instruments"]
+    )
 
 # 4. Market Scanner (NUOVO - Full AI Scan)
-app.include_router(
-    scanner_router,
-    tags=["🔍 Market Scanner"]
-)
+if SCANNER_AVAILABLE:
+    app.include_router(
+        scanner_router,
+        tags=["🔍 Market Scanner"]
+    )
 
 # 5. Best Trades (NUOVO - AI Best Trade Finder)
-app.include_router(
-    best_trades_router,
-    prefix="/api/best-trades",
-    tags=["🎯 Best Trades"]
-)
+if BEST_TRADES_AVAILABLE:
+    app.include_router(
+        best_trades_router,
+        prefix="/api/best-trades",
+        tags=["🎯 Best Trades"]
+    )
 
 # 6. Telegram Bot (NUOVO - Notifiche e Alert)
-app.include_router(
-    telegram_router,
-    prefix="/api/telegram",
-    tags=["📱 Telegram Bot"]
-)
+if TELEGRAM_AVAILABLE:
+    app.include_router(
+        telegram_router,
+        prefix="/api/telegram",
+        tags=["📱 Telegram Bot"]
+    )
 
 # ========================
 # Root & Health Endpoints
