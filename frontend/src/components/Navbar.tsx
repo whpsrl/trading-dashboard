@@ -60,12 +60,9 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Menu */}
-          <div style={{
+          <div className="desktop-menu" style={{
             display: 'flex',
-            gap: '0.5rem',
-            '@media (max-width: 768px)': {
-              display: 'none'
-            }
+            gap: '0.5rem'
           }}>
             {navItems.map((item) => (
               <Link
@@ -105,18 +102,16 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="mobile-menu-button"
             style={{
-              display: 'none',
-              '@media (max-width: 768px)': {
-                display: 'block'
-              },
               background: 'rgba(255, 255, 255, 0.1)',
               border: 'none',
               borderRadius: '8px',
               padding: '0.75rem',
               color: 'white',
               fontSize: '1.5rem',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'none'
             }}
           >
             ☰
@@ -125,7 +120,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div style={{
+          <div className="mobile-menu" style={{
             marginTop: '1rem',
             display: 'flex',
             flexDirection: 'column',
@@ -157,6 +152,18 @@ export default function Navbar() {
           </div>
         )}
       </div>
+
+      {/* Responsive CSS */}
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .desktop-menu {
+            display: none !important;
+          }
+          .mobile-menu-button {
+            display: block !important;
+          }
+        }
+      `}</style>
     </nav>
   );
 }
