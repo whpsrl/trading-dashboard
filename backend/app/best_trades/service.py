@@ -23,7 +23,7 @@ class BestTradesService:
     """
     
     def __init__(self):
-        """Initialize with AI client"""
+        """Initialize with AI client and trade tracker"""
         api_key = os.getenv('ANTHROPIC_API_KEY')
         
         if not api_key:
@@ -37,6 +37,14 @@ class BestTradesService:
             except ImportError:
                 logger.error("❌ anthropic package not installed")
                 self.client = None
+        
+        # Initialize trade tracker
+        try:
+            from ..trade_tracking import tracker
+            self.tracker = tracker
+        except Exception as e:
+            logger.warning(f"⚠️ Trade tracker not available: {e}")
+            self.tracker = None
     
     def is_ai_available(self) -> bool:
         """Check if AI is available"""
@@ -109,6 +117,36 @@ class BestTradesService:
                 'recommendation': self._generate_recommendation(score_data, trade_levels, ai_insights)
             }
             
+            # Save trade to database for tracking if score is high enough
+            if self.tracker and score_data['total_score'] >= 60:  # Solo trade buoni
+                try:
+                    # Determine market type from exchange
+                    market_type = self._get_market_type(exchange)
+                    
+                    trade_id = self.tracker.save_trade(
+                        symbol=symbol,
+                        market_type=market_type,
+                        timeframe='1h',  # Default, può essere parametrizzato
+                        direction=score_data['direction'],
+                        entry_price=indicators['current_price'],
+                        stop_loss=trade_levels.get('stop_loss'),
+                        target_1=trade_levels.get('target_1'),
+                        target_2=trade_levels.get('target_2'),
+                        technical_score=score_data['total_score'],
+                        confidence=score_data['confidence'],
+                        ai_validation=ai_insights,
+                        indicators=indicators,
+                        confluences=score_data['confluences'],
+                        warnings=score_data['warnings']
+                    )
+                    
+                    if trade_id:
+                        analysis['trade_id'] = trade_id
+                        logger.info(f"✅ Trade #{trade_id} saved for tracking")
+                
+                except Exception as e:
+                    logger.error(f"❌ Error saving trade: {e}")
+            
             logger.info(f"✅ {symbol}: Score {score_data['total_score']:.1f} - {score_data['direction']}")
             
             return analysis
@@ -116,6 +154,23 @@ class BestTradesService:
         except Exception as e:
             logger.error(f"❌ Error analyzing {symbol}: {e}")
             return None
+    
+    def _get_market_type(self, exchange: str) -> str:
+        """
+        Determine market type from exchange
+        """
+        if exchange == 'binance':
+            return 'crypto'
+        elif exchange in ['nyse', 'nasdaq', 'us']:
+            return 'stocks'
+        elif exchange in ['oanda', 'forex']:
+            return 'forex'
+        elif exchange in ['indices']:
+            return 'indices'
+        elif exchange in ['commodities']:
+            return 'commodities'
+        else:
+            return 'crypto'  # default
     
     def _calculate_trade_levels(self, indicators: Dict, direction: str) -> Dict:
         """

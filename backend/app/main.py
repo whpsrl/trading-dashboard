@@ -235,6 +235,33 @@ async def startup_event():
     print("   → API Docs:     /docs")
     print("   → Health Check: /api/v1/health")
     print("="*60 + "\n")
+    
+    # Initialize database
+    try:
+        from app.database import init_db
+        init_db()
+        print("✅ Database initialized")
+    except Exception as e:
+        print(f"⚠️  Database initialization failed: {e}")
+    
+    # Start background tasks
+    import asyncio
+    
+    # Start trade tracker (monitors active trades)
+    try:
+        from app.trade_tracking import tracker
+        asyncio.create_task(tracker.start_monitoring(interval_seconds=60))
+        print("✅ Trade tracker started (check every 60s)")
+    except Exception as e:
+        print(f"⚠️  Trade tracker not started: {e}")
+    
+    # Start auto scanner (scans markets every hour)
+    try:
+        from app.telegram_bot.auto_scanner import auto_scanner
+        asyncio.create_task(auto_scanner.start_hourly_scan(min_score=70))
+        print("✅ Auto scanner started (every hour, min_score=70)")
+    except Exception as e:
+        print(f"⚠️  Auto scanner not started: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -243,6 +270,23 @@ async def shutdown_event():
     """
     print("\n" + "="*60)
     print("👋 Trading Dashboard API - SHUTTING DOWN")
+    print("="*60)
+    
+    # Stop background tasks
+    try:
+        from app.trade_tracking import tracker
+        tracker.stop_monitoring()
+        print("✅ Trade tracker stopped")
+    except:
+        pass
+    
+    try:
+        from app.telegram_bot.auto_scanner import auto_scanner
+        auto_scanner.stop()
+        print("✅ Auto scanner stopped")
+    except:
+        pass
+    
     print("="*60 + "\n")
 
 # ========================
