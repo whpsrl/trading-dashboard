@@ -259,119 +259,158 @@ class BestTradesService:
             swing_highs = sorted(highs_100, reverse=True)[:5]
             swing_lows = sorted(lows_100)[:5]
             
-            prompt = f"""Sei un trader professionista esperto. Analizza questo setup di trading con tutti i dati disponibili.
+            prompt = f"""Sei un TRADER PROFESSIONISTA ISTITUZIONALE con 20+ anni di esperienza. Conduci un'analisi APPROFONDITA e DETTAGLIATA di questo asset.
 
 ═══════════════════════════════════════════════════════════════
-📊 {symbol} - ANALISI COMPLETA
+📊 {symbol} - ANALISI ISTITUZIONALE COMPLETA
 ═══════════════════════════════════════════════════════════════
 
 💰 PREZZO CORRENTE: ${indicators['current_price']:.2f}
-🎯 DIREZIONE SUGGERITA: {score_data['direction']}
-⭐ SCORE TECNICO: {score_data['total_score']:.1f}/100
-💪 CONFIDENCE: {score_data['confidence']:.1f}%
+🎯 BIAS TECNICO: {score_data['direction']}
+⭐ SCORE ALGORITMO: {score_data['total_score']:.1f}/100
+💪 CONFIDENCE TECNICA: {score_data['confidence']:.1f}%
 
 ═══════════════════════════════════════════════════════════════
-📈 PERFORMANCE STORICA (ultimi {total_candles} candles)
+📈 ANALISI MULTI-TIMEFRAME - PERFORMANCE STORICA
 ═══════════════════════════════════════════════════════════════
 
-Variazione 100 periodi: {price_change_100:+.2f}%
-Variazione 50 periodi:  {price_change_50:+.2f}%
-Variazione 20 periodi:  {price_change_20:+.2f}%
+📊 Variazione 100 periodi: {price_change_100:+.2f}%
+📊 Variazione 50 periodi:  {price_change_50:+.2f}%
+📊 Variazione 20 periodi:  {price_change_20:+.2f}%
 
-Range totale: ${min(lows_100):.2f} - ${max(highs_100):.2f}
-Volatilità: {volatility:.1f}%
-
-═══════════════════════════════════════════════════════════════
-🔍 INDICATORI TECNICI DETTAGLIATI
-═══════════════════════════════════════════════════════════════
-
-RSI (14): {indicators.get('rsi', 'N/A')}
-  → < 30 = Oversold | > 70 = Overbought
-
-MACD:
-  → MACD Line: {indicators.get('macd', {}).get('macd', 'N/A')}
-  → Signal Line: {indicators.get('macd', {}).get('signal', 'N/A')}
-  → Histogram: {indicators.get('macd', {}).get('histogram', 'N/A')}
-
-Bollinger Bands:
-  → Upper: ${indicators.get('bollinger_bands', {}).get('upper', 0):.2f}
-  → Middle: ${indicators.get('bollinger_bands', {}).get('middle', 0):.2f}
-  → Lower: ${indicators.get('bollinger_bands', {}).get('lower', 0):.2f}
-  → Position: {indicators.get('bollinger_bands', {}).get('position', 50):.1f}%
-  → Bandwidth: {indicators.get('bollinger_bands', {}).get('bandwidth', 0):.2f}%
-
-Trend Analysis:
-  → Direction: {indicators.get('trend', {}).get('direction', 'N/A')}
-  → Strength: {indicators.get('trend', {}).get('strength', 0):.0f}/100
-  → Consistency: {indicators.get('trend', {}).get('consistency', 0):.0f}%
-
-EMA:
-  → EMA(20): ${indicators.get('ema_20', 0):.2f}
-  → EMA(50): ${indicators.get('ema_50', 0):.2f}
-  → EMA(200): ${indicators.get('ema_200', 0):.2f}
-
-Volume Profile:
-  → Volume medio: {avg_volume:.0f}
-  → Volume corrente: {current_volume:.0f}
-  → Ratio: {volume_ratio:.2f}x
-  → Trend: {indicators.get('volume_profile', {}).get('trend', 'N/A')}
-
-Support & Resistance:
-  → Supports: {', '.join([f'${s:.2f}' for s in indicators.get('support_resistance', {}).get('support_levels', [])])}
-  → Resistances: {', '.join([f'${r:.2f}' for r in indicators.get('support_resistance', {}).get('resistance_levels', [])])}
+💎 Range totale: ${min(lows_100):.2f} - ${max(highs_100):.2f}
+🌊 Volatilità realizzata: {volatility:.1f}%
+📍 Posizione nel range: {((indicators['current_price'] - min(lows_100)) / (max(highs_100) - min(lows_100)) * 100):.1f}%
 
 ═══════════════════════════════════════════════════════════════
-✅ CONFLUENZE TECNICHE ({len(score_data['confluences'])})
+🔬 INDICATORI TECNICI - ANALISI PROFONDA
+═══════════════════════════════════════════════════════════════
+
+🎯 **MOMENTUM (RSI)**
+   RSI (14): {indicators.get('rsi', 'N/A')}
+   ├─ Zona: {'🔥 Extremely Overbought' if indicators.get('rsi', 50) > 80 else '📈 Overbought' if indicators.get('rsi', 50) > 70 else '⚖️ Neutral' if indicators.get('rsi', 50) > 30 else '📉 Oversold' if indicators.get('rsi', 50) > 20 else '❄️ Extremely Oversold'}
+   └─ Divergenze? Controllare sui grafici
+
+📊 **MACD - Convergenza/Divergenza**
+   MACD Line: {indicators.get('macd', {}).get('macd', 'N/A')}
+   Signal Line: {indicators.get('macd', {}).get('signal', 'N/A')}
+   Histogram: {indicators.get('macd', {}).get('histogram', 'N/A')}
+   └─ Segnale: {'🟢 Bullish crossover' if indicators.get('macd', {}).get('histogram', 0) > 0 else '🔴 Bearish crossover'}
+
+📈 **BOLLINGER BANDS - Volatility & Mean Reversion**
+   Upper BB: ${indicators.get('bollinger_bands', {}).get('upper', 0):.2f}
+   Middle BB (SMA 20): ${indicators.get('bollinger_bands', {}).get('middle', 0):.2f}
+   Lower BB: ${indicators.get('bollinger_bands', {}).get('lower', 0):.2f}
+   Position: {indicators.get('bollinger_bands', {}).get('position', 50):.1f}% {'🔥 Vicino alla banda superiore' if indicators.get('bollinger_bands', {}).get('position', 50) > 80 else '❄️ Vicino alla banda inferiore' if indicators.get('bollinger_bands', {}).get('position', 50) < 20 else '⚖️ Nel mezzo'}
+   Bandwidth: {indicators.get('bollinger_bands', {}).get('bandwidth', 0):.2f}% {'💥 Alta volatilità' if indicators.get('bollinger_bands', {}).get('bandwidth', 0) > 10 else '😴 Bassa volatilità - possibile breakout imminente' if indicators.get('bollinger_bands', {}).get('bandwidth', 0) < 3 else '📊 Volatilità normale'}
+
+🎢 **TREND ANALYSIS - Direzione e Forza**
+   Direction: {indicators.get('trend', {}).get('direction', 'N/A')}
+   Strength: {indicators.get('trend', {}).get('strength', 0):.0f}/100 {'💪 TREND FORTE' if indicators.get('trend', {}).get('strength', 0) > 70 else '⚡ Trend moderato' if indicators.get('trend', {}).get('strength', 0) > 40 else '🌫️ Trend debole/laterale'}
+   Consistency: {indicators.get('trend', {}).get('consistency', 0):.0f}%
+
+📉 **EMA STACK - Struttura del Trend**
+   EMA(20): ${indicators.get('ema_20', 0):.2f}
+   EMA(50): ${indicators.get('ema_50', 0):.2f}
+   EMA(200): ${indicators.get('ema_200', 0):.2f}
+   └─ Allineamento: {'🟢 Bullish stack (20>50>200)' if indicators.get('ema_20', 0) > indicators.get('ema_50', 0) > indicators.get('ema_200', 0) else '🔴 Bearish stack (20<50<200)' if indicators.get('ema_20', 0) < indicators.get('ema_50', 0) < indicators.get('ema_200', 0) else '⚠️ Mixed - possibile cambio trend'}
+
+📊 **VOLUME PROFILE - Smart Money Activity**
+   Volume medio 100 periodi: {avg_volume:.0f}
+   Volume corrente: {current_volume:.0f}
+   Ratio: {volume_ratio:.2f}x {'🔥 Volume esplosivo!' if volume_ratio > 2 else '📈 Volume sopra media' if volume_ratio > 1.2 else '📊 Volume normale' if volume_ratio > 0.8 else '😴 Volume basso - poca convinzione'}
+   Trend volumetrico: {indicators.get('volume_profile', {}).get('trend', 'N/A')}
+
+🎯 **SUPPORT & RESISTANCE - Zone Critiche**
+   🟢 Supports: {', '.join([f'${s:.2f}' for s in indicators.get('support_resistance', {}).get('support_levels', [])]) or 'Nessun support chiaro identificato'}
+   🔴 Resistances: {', '.join([f'${r:.2f}' for r in indicators.get('support_resistance', {}).get('resistance_levels', [])]) or 'Nessuna resistance chiara identificata'}
+
+═══════════════════════════════════════════════════════════════
+✅ CONFLUENZE TECNICHE MULTIPLE ({len(score_data['confluences'])})
 ═══════════════════════════════════════════════════════════════
 {chr(10).join(f"✓ {c}" for c in score_data['confluences'])}
 
 {'═══════════════════════════════════════════════════════════════' if score_data['warnings'] else ''}
-{'⚠️  SEGNALI CONTRASTANTI (' + str(len(score_data['warnings'])) + ')' if score_data['warnings'] else ''}
+{'⚠️  SEGNALI CONTRASTANTI - RED FLAGS (' + str(len(score_data['warnings'])) + ')' if score_data['warnings'] else ''}
 {'═══════════════════════════════════════════════════════════════' if score_data['warnings'] else ''}
 {chr(10).join(f"⚠ {w}" for w in score_data['warnings']) if score_data['warnings'] else ''}
 
 ═══════════════════════════════════════════════════════════════
-📊 PRICE ACTION - Ultimi 50 Candles
+📊 PRICE ACTION ANALYSIS - Swing Highs & Lows
 ═══════════════════════════════════════════════════════════════
 
-Swing Highs: {', '.join([f'${h:.2f}' for h in swing_highs])}
-Swing Lows: {', '.join([f'${l:.2f}' for l in swing_lows])}
+🔺 Top 5 Swing Highs (ultimi 100 candles): {', '.join([f'${h:.2f}' for h in swing_highs])}
+🔻 Top 5 Swing Lows (ultimi 100 candles): {', '.join([f'${l:.2f}' for l in swing_lows])}
 
-Dettaglio ultimi 20 candles:
-{chr(10).join(f"#{i}: O:{c['open']:.2f} H:{c['high']:.2f} L:{c['low']:.2f} C:{c['close']:.2f} V:{c['volume']:.0f}" for i, c in enumerate(recent_20, 1))}
+Ultimi 20 candles per analisi candlestick patterns:
+{chr(10).join(f"#{i}: Open:{c['open']:.2f} High:{c['high']:.2f} Low:{c['low']:.2f} Close:{c['close']:.2f} Vol:{c['volume']:.0f}" for i, c in enumerate(recent_20, 1))}
 
 ═══════════════════════════════════════════════════════════════
-🤖 RICHIESTA ANALISI AI
+🧠 RICHIESTA ANALISI AI PROFESSIONALE
 ═══════════════════════════════════════════════════════════════
 
-Basandoti su TUTTI i dati sopra (non solo gli ultimi candles), analizza:
+Come TRADER ISTITUZIONALE, fornisci un'analisi APPROFONDITA e DETTAGLIATA considerando:
 
-1. **VALIDITÀ SETUP**: Il setup è davvero valido considerando il contesto storico?
-2. **TIMING**: È il momento giusto per entrare o è meglio aspettare?
-3. **RISK FACTORS**: Quali rischi specifici vedi guardando tutto il quadro?
-4. **OPPORTUNITIES**: Quali opportunità confermi dai dati?
-5. **PRICE TARGETS**: I target suggeritisono realistici considerando la volatilità storica?
-6. **PATTERN**: Vedi pattern di prezzo significativi nei dati storici?
-7. **VOLUME**: Il volume conferma il movimento o c'è divergenza?
+1. **VALIDITÀ SETUP**: Questo setup è davvero valido? Analizza il contesto storico, la struttura del mercato, e se ci sono confluenze sufficienti.
 
-Rispondi in formato JSON:
+2. **TIMING ENTRY**: È il momento ottimale per entrare? Considera: 
+   - Posizione rispetto ai livelli chiave
+   - Momentum attuale vs trend di fondo
+   - Volume e convinzione del mercato
+   - Possibili pullback o conferme da attendere
+
+3. **RISK ANALYSIS**: Identifica TUTTI i rischi specifici:
+   - Livelli critici che possono invalidare il setup
+   - Possibili fake-out o trap
+   - Fattori macro che potrebbero influenzare
+   - Zone di presa di profitto istituzionale
+
+4. **OPPORTUNITIES**: Quali sono le opportunità concrete?
+   - Perché questo setup potrebbe funzionare bene?
+   - Quali sono i driver principali?
+   - C'è asimmetria rischio/rendimento favorevole?
+
+5. **PRICE TARGETS**: Valuta i target suggeriti:
+   - Sono realistici considerando volatilità storica?
+   - Ci sono livelli tecnici più appropriati?
+   - Il risk/reward è adeguato?
+
+6. **PATTERN RECOGNITION**: Identifica pattern significativi:
+   - Candlestick patterns (doji, engulfing, hammer, etc.)
+   - Chart patterns (triangoli, flag, testa e spalle, etc.)
+   - Pattern di volume (accumulation, distribution)
+
+7. **VOLUME ANALYSIS**: Il volume conferma il movimento?
+   - C'è allineamento tra prezzo e volume?
+   - Vedi segni di smart money activity?
+   - Possibili divergenze prezzo-volume?
+
+8. **MARKET STRUCTURE**: Come si posiziona l'asset nella struttura di mercato?
+   - Higher highs/higher lows (uptrend) o lower highs/lower lows (downtrend)?
+   - Breakout di struttura o range-bound?
+   - Liquidità disponibile sopra/sotto?
+
+Rispondi in formato JSON DETTAGLIATO:
 {{
     "valid": true/false,
     "validation_score": 1-10,
     "timing": "immediate|wait_for_pullback|wait_for_confirmation|avoid",
-    "risk_factors": ["fattore1", "fattore2", "fattore3"],
-    "opportunities": ["opportunità1", "opportunità2"],
+    "risk_factors": ["fattore rischio 1 dettagliato", "fattore rischio 2", "fattore rischio 3+"],
+    "opportunities": ["opportunità dettagliata 1", "opportunità 2", "opportunità 3+"],
     "price_targets_realistic": true/false,
-    "patterns_identified": ["pattern1", "pattern2"],
+    "suggested_targets": {{"t1": prezzo_target_1, "t2": prezzo_target_2, "reasoning": "spiegazione"}},
+    "patterns_identified": ["pattern candlestick 1", "chart pattern 2", "volume pattern 3"],
     "volume_confirmation": "strong|moderate|weak|divergence",
-    "recommendation": "Raccomandazione dettagliata basata sull'analisi completa",
-    "caution": "Avvertenze importanti considerando tutto il contesto"
+    "market_structure": "descrizione struttura di mercato e livelli chiave",
+    "recommendation": "Raccomandazione operativa DETTAGLIATA con piano di trading specifico (entry, SL, TP, gestione)",
+    "caution": "Avvertenze CRITICHE e scenari alternativi da monitorare",
+    "confidence_level": 1-10
 }}"""
 
             response = self.client.messages.create(
                 model="claude-sonnet-4-20250514",
-                max_tokens=1500,
-                temperature=0.3,
+                max_tokens=2500,  # Aumentato per analisi più profonda
+                temperature=0.2,  # Più deterministico per analisi professionale
                 messages=[{"role": "user", "content": prompt}]
             )
             

@@ -2,8 +2,41 @@
 
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import { useState } from 'react';
 
 export default function Home() {
+  const [assetRequest, setAssetRequest] = useState('');
+  const [timeframe, setTimeframe] = useState('1h');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  const handleAnalyze = async () => {
+    if (!assetRequest.trim()) {
+      alert('Inserisci un asset da analizzare');
+      return;
+    }
+
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://trading-dashboard-production-79d9.up.railway.app';
+      const response = await fetch(`${apiUrl}/api/best-trades/analyze/${assetRequest}?timeframe=${timeframe}`);
+      
+      if (!response.ok) {
+        throw new Error('Analisi fallita');
+      }
+
+      const data = await response.json();
+      setResult(data);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Errore nell\'analisi. Controlla il simbolo asset.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const features = [
     {
       title: '🎯 Best Trades Finder',
@@ -227,6 +260,202 @@ export default function Home() {
                 </div>
               </Link>
             ))}
+          </div>
+
+          {/* Custom Asset Analysis Request */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+            border: '2px solid rgba(102, 126, 234, 0.3)',
+            borderRadius: '20px',
+            padding: '3rem',
+            marginBottom: '4rem'
+          }}>
+            <h2 style={{
+              fontSize: '2rem',
+              marginBottom: '1rem',
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
+              🎯 Richiedi Analisi Personalizzata
+            </h2>
+            <p style={{
+              fontSize: '1.1rem',
+              color: '#aaa',
+              textAlign: 'center',
+              marginBottom: '2rem'
+            }}>
+              Inserisci qualsiasi asset (es: BTC/USDT, AAPL, EUR_USD, GOLD) per un'analisi AI approfondita
+            </p>
+
+            <div style={{
+              maxWidth: '600px',
+              margin: '0 auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem'
+            }}>
+              <div style={{
+                display: 'flex',
+                gap: '1rem',
+                flexWrap: 'wrap'
+              }}>
+                <input
+                  type="text"
+                  placeholder="Es: BTC/USDT, AAPL, EUR_USD, GOLD..."
+                  value={assetRequest}
+                  onChange={(e) => setAssetRequest(e.target.value.toUpperCase())}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAnalyze()}
+                  style={{
+                    flex: '1',
+                    minWidth: '250px',
+                    padding: '1rem 1.5rem',
+                    fontSize: '1.1rem',
+                    borderRadius: '12px',
+                    border: '2px solid rgba(102, 126, 234, 0.3)',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    color: 'white',
+                    outline: 'none'
+                  }}
+                />
+
+                <select
+                  value={timeframe}
+                  onChange={(e) => setTimeframe(e.target.value)}
+                  style={{
+                    padding: '1rem 1.5rem',
+                    fontSize: '1.1rem',
+                    borderRadius: '12px',
+                    border: '2px solid rgba(102, 126, 234, 0.3)',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    color: 'white',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="15m">15 min</option>
+                  <option value="1h">1 ora</option>
+                  <option value="4h">4 ore</option>
+                  <option value="1d">1 giorno</option>
+                </select>
+              </div>
+
+              <button
+                onClick={handleAnalyze}
+                disabled={loading}
+                style={{
+                  padding: '1rem 2rem',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: loading 
+                    ? 'rgba(102, 126, 234, 0.5)' 
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.3s',
+                  opacity: loading ? 0.7 : 1
+                }}
+              >
+                {loading ? '🔄 Analizzando...' : '🚀 Analizza con AI'}
+              </button>
+            </div>
+
+            {/* Result Display */}
+            {result && (
+              <div style={{
+                marginTop: '2rem',
+                padding: '2rem',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '12px',
+                border: '1px solid rgba(102, 126, 234, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '1.5rem',
+                  marginBottom: '1rem',
+                  color: '#fff'
+                }}>
+                  📊 {result.symbol} - Analisi Completa
+                </h3>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '1rem',
+                  marginBottom: '1.5rem'
+                }}>
+                  <div style={{
+                    background: 'rgba(102, 126, 234, 0.1)',
+                    padding: '1rem',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ fontSize: '0.9rem', color: '#888', marginBottom: '0.5rem' }}>Score</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fff' }}>
+                      {result.score_data?.total_score?.toFixed(1)}/100
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: 'rgba(102, 126, 234, 0.1)',
+                    padding: '1rem',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ fontSize: '0.9rem', color: '#888', marginBottom: '0.5rem' }}>Direzione</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff' }}>
+                      {result.score_data?.direction === 'LONG' ? '🟢 LONG' : result.score_data?.direction === 'SHORT' ? '🔴 SHORT' : '⚪ NEUTRAL'}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: 'rgba(102, 126, 234, 0.1)',
+                    padding: '1rem',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ fontSize: '0.9rem', color: '#888', marginBottom: '0.5rem' }}>Prezzo</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff' }}>
+                      ${result.indicators?.current_price?.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                {result.ai_validation && (
+                  <div style={{
+                    background: 'rgba(102, 126, 234, 0.05)',
+                    padding: '1.5rem',
+                    borderRadius: '8px',
+                    marginTop: '1rem'
+                  }}>
+                    <h4 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#667eea' }}>
+                      🤖 Analisi AI
+                    </h4>
+                    <p style={{ color: '#ddd', lineHeight: 1.6, marginBottom: '1rem' }}>
+                      {result.ai_validation.recommendation}
+                    </p>
+                    {result.ai_validation.caution && (
+                      <p style={{ color: '#ff6b6b', lineHeight: 1.6 }}>
+                        ⚠️ {result.ai_validation.caution}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <Link
+                  href={`/best-trades`}
+                  style={{
+                    display: 'inline-block',
+                    marginTop: '1rem',
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    color: 'white',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Vedi Dashboard Completa →
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Info Section */}
