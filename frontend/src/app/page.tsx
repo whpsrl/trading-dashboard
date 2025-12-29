@@ -35,6 +35,21 @@ export default function Home() {
     }
   }
 
+  const testBTC = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/scan/test`)
+      const data = await response.json()
+      setResults(data)
+      if (data.success) {
+        setMessage('✅ BTC analysis complete!')
+      } else {
+        setMessage('⚠️ ' + (data.error || 'Analysis failed'))
+      }
+    } catch (error) {
+      setMessage('❌ Error: ' + (error as Error).message)
+    }
+  }
+
   const testTelegram = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/test/telegram`)
@@ -118,11 +133,10 @@ export default function Home() {
           {scanning ? '⏳ Scanning...' : '🚀 START MARKET SCAN'}
         </button>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1fr 1fr' }}>
           <button
             onClick={testTelegram}
             style={{
-              flex: 1,
               background: '#10b981',
               color: 'white',
               padding: '0.875rem',
@@ -138,7 +152,6 @@ export default function Home() {
           <button
             onClick={checkHealth}
             style={{
-              flex: 1,
               background: '#6366f1',
               color: 'white',
               padding: '0.875rem',
@@ -149,6 +162,22 @@ export default function Home() {
             }}
           >
             🏥 Health Check
+          </button>
+
+          <button
+            onClick={testBTC}
+            style={{
+              gridColumn: '1 / -1',
+              background: '#f59e0b',
+              color: 'white',
+              padding: '0.875rem',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+          >
+            🧪 Test BTC Analysis (Quick)
           </button>
         </div>
       </div>
@@ -195,10 +224,10 @@ export default function Home() {
       }}>
         <h3 style={{ fontWeight: 'bold', marginBottom: '0.75rem' }}>ℹ️ How it works:</h3>
         <ul style={{ listStyle: 'none', display: 'grid', gap: '0.5rem' }}>
-          <li>1️⃣ Fetches top 30 crypto pairs from Binance by 24h volume</li>
-          <li>2️⃣ Analyzes 300 candles on 15m, 1h, 4h timeframes</li>
-          <li>3️⃣ Claude AI analyzes 100 candles and validates each setup</li>
-          <li>4️⃣ Sends top 3 high-confidence signals to Telegram</li>
+          <li>1️⃣ Fetches top 15 crypto pairs from Binance by 24h volume</li>
+          <li>2️⃣ Analyzes 100 candles on 15m, 1h, 4h timeframes</li>
+          <li>3️⃣ Claude Sonnet 4 validates each setup (min 60% confidence)</li>
+          <li>4️⃣ Sends best signals to Telegram</li>
         </ul>
       </div>
     </div>

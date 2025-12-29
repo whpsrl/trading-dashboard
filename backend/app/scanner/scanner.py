@@ -17,8 +17,8 @@ class TradingScanner:
         binance_key: str = "",
         binance_secret: str = "",
         claude_key: str = "",
-        top_n_coins: int = 30,
-        min_confidence: int = 75
+        top_n_coins: int = 15,
+        min_confidence: int = 60
     ):
         """Initialize scanner with API clients"""
         self.fetcher = BinanceFetcher(binance_key, binance_secret)
