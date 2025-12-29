@@ -147,7 +147,7 @@ async def scan_market_for_best_trades(
         crypto_symbols = {
             'quick': TOP_50_MARKETCAP[:10],      # Top 10 (~15 sec)
             'balanced': TOP_50_MARKETCAP[:20],   # Top 20 (~30 sec)
-            'full': TOP_50_MARKETCAP[:50]        # Top 50 (~2 min, più opportunità!)
+            'full': TOP_50_MARKETCAP[:25]        # Top 25 (~45 sec, stabile!)
         }
         
         symbols = crypto_symbols.get(preset, crypto_symbols['quick'])
