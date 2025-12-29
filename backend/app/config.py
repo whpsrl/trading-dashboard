@@ -1,40 +1,28 @@
-"""Application Configuration"""
-try:
-    from pydantic_settings import BaseSettings
-except ImportError:
-    from pydantic import BaseSettings
-
-from typing import List
+"""
+Configuration Management
+"""
+import os
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    # Environment
-    ENVIRONMENT: str = "development"
-    DEBUG: bool = True
-    
-    # Database
-    DATABASE_URL: str
-    REDIS_URL: str
-    
-    # Security
-    JWT_SECRET_KEY: str
-    ENCRYPTION_KEY: str
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    
-    # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
-    
-    # Market Data APIs
+    # Binance
     BINANCE_API_KEY: str = ""
-    BINANCE_API_SECRET: str = ""
-    OANDA_API_TOKEN: str = ""
-    FINNHUB_API_KEY: str = ""
+    BINANCE_SECRET: str = ""
     
-    # AI
-    ANTHROPIC_API_KEY: str = ""
-    CLAUDE_MODEL: str = "claude-sonnet-4-20250514"
+    # OpenAI
+    OPENAI_API_KEY: str = ""
+    
+    # Telegram
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
+    
+    # App Settings
+    TOP_N_COINS: int = 30
+    MIN_CONFIDENCE_SCORE: int = 75
+    MAX_ALERTS_PER_SCAN: int = 3
     
     class Config:
         env_file = ".env"
+        case_sensitive = True
 
 settings = Settings()
