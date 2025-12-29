@@ -290,6 +290,34 @@ async def health_check():
         "ai_available": best_trades_service.is_ai_available()
     }
 
+@router.get("/test-ai")
+async def test_ai_single():
+    """Test AI analysis on single symbol"""
+    try:
+        # Test BTC
+        candles = await unified_market_service.get_candles("BTC/USDT", "crypto", "1h", 200)
+        
+        if not candles:
+            return {"error": "Failed to get candles"}
+        
+        analysis = await ai_only_service.analyze_symbol("BTC/USDT", candles)
+        
+        if not analysis:
+            return {"error": "AI returned None", "ai_available": ai_only_service.is_available()}
+        
+        return {
+            "success": True,
+            "analysis": analysis,
+            "message": "AI test completed"
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "ai_available": ai_only_service.is_available()
+        }
+
 @router.get("/test-scan")
 async def test_scan():
     """Ultra simple test scan - just return fake data"""
