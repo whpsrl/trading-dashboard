@@ -97,6 +97,7 @@ IMPORTANTE:
 - Sii CRITICO, meglio dire NO che dare falsi segnali"""
 
             # Chiama AI
+            logger.info(f"🤖 Calling Gemini AI for {symbol}...")
             response = self.client.models.generate_content(
                 model="gemini-2.0-flash-exp",
                 contents=prompt
@@ -105,13 +106,18 @@ IMPORTANTE:
             # Parse risposta
             import json
             content = response.text
+            logger.info(f"📄 AI raw response length: {len(content)} chars")
+            logger.info(f"📄 AI response preview: {content[:200]}...")
             
             if "```json" in content:
                 content = content.split("```json")[1].split("```")[0]
             elif "```" in content:
                 content = content.split("```")[1].split("```")[0]
             
-            ai_result = json.loads(content.strip())
+            content = content.strip()
+            logger.info(f"📄 Cleaned JSON: {content[:200]}...")
+            
+            ai_result = json.loads(content)
             
             # Aggiungi info aggiuntive
             ai_result['symbol'] = symbol
