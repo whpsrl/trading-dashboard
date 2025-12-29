@@ -110,7 +110,7 @@ async def analyze_single_symbol(
 async def scan_market_for_best_trades(
     preset: str = Query("quick", description="Scan preset: quick/balanced/full"),
     timeframe: str = Query("1h", description="Candle timeframe"),
-    min_score: float = Query(60, ge=0, le=100, description="Minimum score threshold")
+    min_score: float = Query(0, ge=0, le=100, description="Show ALL results (even low scores)")
 ):
     """
     SIMPLIFIED SCAN - ONLY BINANCE CRYPTO
