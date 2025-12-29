@@ -267,3 +267,20 @@ async def health_check():
         "ai_available": best_trades_service.is_ai_available()
     }
 
+@router.get("/test-scan")
+async def test_scan():
+    """Ultra simple test scan - just return fake data"""
+    from datetime import datetime
+    return {
+        "success": True,
+        "count": 1,
+        "opportunities": [{
+            "symbol": "BTC/USDT",
+            "score": 75,
+            "direction": "LONG",
+            "current_price": 42000
+        }],
+        "scan_time": datetime.now().isoformat(),
+        "message": "Test scan works!"
+    }
+
