@@ -325,6 +325,12 @@ class UnifiedMarketDataService:
             logger.error(f"Unknown asset type: {asset_type}")
             return []
     
+    async def get_ohlcv(self, symbol: str, timeframe: str = '1h', limit: int = 200, exchange: str = 'binance') -> List[Dict]:
+        """
+        Alias for get_candles (for backward compatibility with old code)
+        """
+        return await self.get_candles(symbol, 'crypto', timeframe, limit)
+    
     def get_rate_limit_status(self) -> Dict:
         """Get current rate limit usage"""
         now = time.time()
