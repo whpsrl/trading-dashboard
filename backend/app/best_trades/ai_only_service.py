@@ -16,18 +16,18 @@ class AIOnlyTradingService:
     """
     
     def __init__(self):
-        api_key = os.getenv('GEMINI_API_KEY')
+        api_key = os.getenv('ANTHROPIC_API_KEY')
         
         if not api_key:
-            logger.error("❌ GEMINI_API_KEY not set!")
+            logger.error("❌ ANTHROPIC_API_KEY not set!")
             self.client = None
         else:
             try:
-                from google import genai
-                self.client = genai.Client(api_key=api_key)
-                logger.info("✅ AI-Only Service initialized with Gemini 2.0")
+                from anthropic import Anthropic
+                self.client = Anthropic(api_key=api_key)
+                logger.info("✅ AI-Only Service initialized with Claude")
             except Exception as e:
-                logger.error(f"❌ Failed to initialize Gemini: {e}")
+                logger.error(f"❌ Failed to initialize Claude: {e}")
                 self.client = None
     
     def is_available(self) -> bool:
@@ -96,16 +96,17 @@ IMPORTANTE:
 - Score alto (80+) solo se setup MOLTO forte
 - Sii CRITICO, meglio dire NO che dare falsi segnali"""
 
-            # Chiama AI - usando modello STABILE con limiti più alti
-            logger.info(f"🤖 Calling Gemini AI for {symbol}...")
-            response = self.client.models.generate_content(
-                model="gemini-1.5-flash",  # Modello stabile (non experimental)
-                contents=prompt
+            # Chiama Claude AI
+            logger.info(f"🤖 Calling Claude AI for {symbol}...")
+            response = self.client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=2000,
+                messages=[{"role": "user", "content": prompt}]
             )
             
             # Parse risposta
             import json
-            content = response.text
+            content = response.content[0].text
             logger.info(f"📄 AI raw response length: {len(content)} chars")
             logger.info(f"📄 AI response preview: {content[:200]}...")
             
