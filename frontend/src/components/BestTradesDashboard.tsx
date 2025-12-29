@@ -440,6 +440,42 @@ export default function BestTradesDashboard({ apiUrl }: BestTradesDashboardProps
                       ✅ {opp.confluences.length} Confluences
                     </div>
                   )}
+
+                  {/* AI Analysis - Show if available */}
+                  {opp.ai_insights && (
+                    <div style={{
+                      marginTop: '1rem',
+                      padding: '1rem',
+                      background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
+                      borderRadius: '8px',
+                      border: '2px solid #3b82f6'
+                    }}>
+                      <div style={{ color: '#60a5fa', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                        🤖 AI GEMINI ANALYSIS
+                      </div>
+                      {opp.ai_insights.valid !== undefined && (
+                        <div style={{ fontSize: '0.8rem', color: '#fff', marginBottom: '0.5rem' }}>
+                          <strong>Validation:</strong> {opp.ai_insights.valid ? '✅ Valid' : '❌ Not Valid'} 
+                          {opp.ai_insights.validation_score && ` (${opp.ai_insights.validation_score}/10)`}
+                        </div>
+                      )}
+                      {opp.ai_insights.timing && (
+                        <div style={{ fontSize: '0.8rem', color: '#fbbf24', marginBottom: '0.5rem' }}>
+                          <strong>Timing:</strong> {opp.ai_insights.timing.replace('_', ' ').toUpperCase()}
+                        </div>
+                      )}
+                      {opp.ai_insights.recommendation && (
+                        <div style={{ fontSize: '0.8rem', color: '#e5e7eb', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                          "{opp.ai_insights.recommendation.substring(0, 150)}..."
+                        </div>
+                      )}
+                      {opp.ai_insights.confidence_level && (
+                        <div style={{ fontSize: '0.8rem', color: '#34d399', marginTop: '0.5rem' }}>
+                          <strong>AI Confidence:</strong> {opp.ai_insights.confidence_level}/10
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
