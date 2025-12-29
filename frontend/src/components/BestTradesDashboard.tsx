@@ -435,7 +435,7 @@ export default function BestTradesDashboard({ apiUrl }: BestTradesDashboardProps
                   )}
 
                   {/* Confluences */}
-                  {opp.confluences.length > 0 && (
+                  {opp.confluences && opp.confluences.length > 0 && (
                     <div style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: '500' }}>
                       ✅ {opp.confluences.length} Confluences
                     </div>
