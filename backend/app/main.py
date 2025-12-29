@@ -111,6 +111,44 @@ async def run_scan(background_tasks: BackgroundTasks):
     }
 
 
+@app.get("/api/scan/test")
+async def test_scan_one_symbol():
+    """
+    Quick test - analyze only BTC/USDT
+    """
+    if not scanner:
+        return {"error": "Scanner not initialized"}
+    
+    try:
+        logger.info("🔍 Test scan: BTC/USDT only")
+        
+        # Fetch BTC data
+        ohlcv = await scanner.fetcher.fetch_ohlcv("BTC/USDT", "1h", 100)
+        
+        if not ohlcv:
+            return {"error": "Failed to fetch BTC data"}
+        
+        # AI analysis
+        analysis = await scanner.ai.analyze_setup("BTC/USDT", ohlcv, "1h")
+        
+        if not analysis:
+            return {"error": "AI analysis failed", "ai_available": scanner.ai.is_available()}
+        
+        return {
+            "success": True,
+            "symbol": "BTC/USDT",
+            "analysis": analysis
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Test scan error: {e}")
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 async def perform_scan_and_alert():
     """Perform scan and send Telegram alerts"""
     try:
