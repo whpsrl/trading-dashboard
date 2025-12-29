@@ -38,8 +38,8 @@ async def lifespan(app: FastAPI):
         binance_key=settings.BINANCE_API_KEY,
         binance_secret=settings.BINANCE_SECRET,
         claude_key=settings.ANTHROPIC_API_KEY,
-        top_n_coins=settings.MAX_COINS_PER_SCAN,
-        min_confidence=settings.MIN_SCORE_FOR_TELEGRAM
+        top_n_coins=settings.TOP_N_COINS,
+        min_confidence=settings.MIN_CONFIDENCE_SCORE
     )
     
     # Initialize Telegram
