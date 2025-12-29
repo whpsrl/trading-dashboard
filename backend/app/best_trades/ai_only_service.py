@@ -98,27 +98,36 @@ IMPORTANTE:
 
             # Chiama Claude AI
             logger.info(f"🤖 Calling Claude AI for {symbol}...")
+            logger.info(f"🔑 API Key present: {bool(os.getenv('ANTHROPIC_API_KEY'))}")
+            logger.info(f"🔑 Client initialized: {bool(self.client)}")
+            
             response = self.client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=2000,
                 messages=[{"role": "user", "content": prompt}]
             )
             
+            logger.info(f"✅ Claude responded! Status: {response.stop_reason}")
+            
             # Parse risposta
             import json
             content = response.content[0].text
             logger.info(f"📄 AI raw response length: {len(content)} chars")
-            logger.info(f"📄 AI response preview: {content[:200]}...")
+            logger.info(f"📄 AI response FULL:\n{content}\n---END---")
             
             if "```json" in content:
+                logger.info("🔧 Extracting JSON from ```json block")
                 content = content.split("```json")[1].split("```")[0]
             elif "```" in content:
+                logger.info("🔧 Extracting JSON from ``` block")
                 content = content.split("```")[1].split("```")[0]
             
             content = content.strip()
-            logger.info(f"📄 Cleaned JSON: {content[:200]}...")
+            logger.info(f"📄 Cleaned JSON (first 500 chars): {content[:500]}...")
             
+            logger.info("🔄 Parsing JSON...")
             ai_result = json.loads(content)
+            logger.info(f"✅ JSON parsed! Keys: {list(ai_result.keys())}")
             
             # Aggiungi info aggiuntive
             ai_result['symbol'] = symbol
