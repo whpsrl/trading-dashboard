@@ -125,20 +125,29 @@ async def scan_market_for_best_trades(
         
         logger.info(f"🚀 Starting {preset} crypto scan: min_score={min_score}")
         
-        # ONLY CRYPTO - Simple presets
+        # TOP 50 CRYPTO BY MARKET CAP (ordinate per importanza)
+        TOP_50_MARKETCAP = [
+            # Top 10
+            "BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
+            "ADA/USDT", "DOGE/USDT", "TRX/USDT", "TON/USDT", "LINK/USDT",
+            # 11-20
+            "AVAX/USDT", "SHIB/USDT", "DOT/USDT", "MATIC/USDT", "LTC/USDT",
+            "BCH/USDT", "UNI/USDT", "NEAR/USDT", "ICP/USDT", "APT/USDT",
+            # 21-30
+            "ATOM/USDT", "FIL/USDT", "ARB/USDT", "OP/USDT", "VET/USDT",
+            "IMX/USDT", "HBAR/USDT", "STX/USDT", "ALGO/USDT", "GRT/USDT",
+            # 31-40
+            "AAVE/USDT", "EOS/USDT", "FTM/USDT", "XTZ/USDT", "SAND/USDT",
+            "MANA/USDT", "THETA/USDT", "AXS/USDT", "RUNE/USDT", "KAVA/USDT",
+            # 41-50
+            "CHZ/USDT", "ZIL/USDT", "ENJ/USDT", "1INCH/USDT", "CRV/USDT",
+            "COMP/USDT", "SNX/USDT", "SUSHI/USDT", "YFI/USDT", "BAT/USDT"
+        ]
+        
         crypto_symbols = {
-            'quick': ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT", 
-                     "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "DOT/USDT", "MATIC/USDT"],
-            'balanced': ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
-                        "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "DOT/USDT", "MATIC/USDT",
-                        "LINK/USDT", "UNI/USDT", "ATOM/USDT", "LTC/USDT", "NEAR/USDT",
-                        "ALGO/USDT", "FIL/USDT", "APT/USDT", "ARB/USDT", "OP/USDT"],
-            'full': ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
-                    "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "DOT/USDT", "MATIC/USDT",
-                    "LINK/USDT", "UNI/USDT", "ATOM/USDT", "LTC/USDT", "NEAR/USDT",
-                    "ALGO/USDT", "FIL/USDT", "APT/USDT", "ARB/USDT", "OP/USDT",
-                    "ICP/USDT", "VET/USDT", "FTM/USDT", "SAND/USDT", "MANA/USDT",
-                    "AAVE/USDT", "GRT/USDT", "EOS/USDT", "XTZ/USDT", "THETA/USDT"]
+            'quick': TOP_50_MARKETCAP[:10],      # Top 10 (~15 sec)
+            'balanced': TOP_50_MARKETCAP[:20],   # Top 20 (~30 sec)
+            'full': TOP_50_MARKETCAP[:50]        # Top 50 (~2 min, più opportunità!)
         }
         
         symbols = crypto_symbols.get(preset, crypto_symbols['quick'])
