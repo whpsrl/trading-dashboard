@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     TELEGRAM_CHAT_ID: str = ""
     
     # App Settings
-    TOP_N_COINS: int = 30
-    MIN_CONFIDENCE_SCORE: int = 75
+    TOP_N_COINS: int = 15
+    MIN_CONFIDENCE_SCORE: int = 60
     MAX_ALERTS_PER_SCAN: int = 3
     
     class Config:
