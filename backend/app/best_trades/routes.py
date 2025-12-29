@@ -112,47 +112,44 @@ async def scan_market_for_best_trades(
     min_score: float = Query(60, ge=0, le=100, description="Minimum score threshold")
 ):
     """
-    Scansiona il mercato per trovare le migliori opportunità di trading
+    SIMPLIFIED SCAN - ONLY BINANCE CRYPTO
     
     Presets:
-    - quick: ~55 simboli (Crypto + Top Stocks + Indices) - ~30 sec
-    - balanced: ~80 simboli (Più stocks + commodities + forex) - ~60 sec  
-    - full: ~150 simboli (Coverage completo) - ~2 min
-    
-    Returns:
-        List of best trade opportunities sorted by score
+    - quick: 10 crypto (~15 seconds)
+    - balanced: 20 crypto (~30 seconds)
+    - full: 30 crypto (~45 seconds)
     """
     try:
         from datetime import datetime
         import asyncio
         
-        logger.info(f"🚀 Starting {preset} market scan: min_score={min_score}")
+        logger.info(f"🚀 Starting {preset} crypto scan: min_score={min_score}")
         
-        # Get symbols for preset
-        scan_data = get_scan_symbols(preset)
-        metadata = scan_data['metadata']
+        # ONLY CRYPTO - Simple presets
+        crypto_symbols = {
+            'quick': ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT", 
+                     "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "DOT/USDT", "MATIC/USDT"],
+            'balanced': ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
+                        "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "DOT/USDT", "MATIC/USDT",
+                        "LINK/USDT", "UNI/USDT", "ATOM/USDT", "LTC/USDT", "NEAR/USDT",
+                        "ALGO/USDT", "FIL/USDT", "APT/USDT", "ARB/USDT", "OP/USDT"],
+            'full': ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
+                    "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "DOT/USDT", "MATIC/USDT",
+                    "LINK/USDT", "UNI/USDT", "ATOM/USDT", "LTC/USDT", "NEAR/USDT",
+                    "ALGO/USDT", "FIL/USDT", "APT/USDT", "ARB/USDT", "OP/USDT",
+                    "ICP/USDT", "VET/USDT", "FTM/USDT", "SAND/USDT", "MANA/USDT",
+                    "AAVE/USDT", "GRT/USDT", "EOS/USDT", "XTZ/USDT", "THETA/USDT"]
+        }
         
-        logger.info(f"📊 Scanning {metadata['total_symbols']} assets across all markets...")
-        logger.info(f"⏱️  Estimated time: {metadata['estimated_time']} seconds")
-        logger.info(f"📡 Finnhub calls needed: {metadata['finnhub_calls']}")
+        symbols = crypto_symbols.get(preset, crypto_symbols['quick'])
+        logger.info(f"📊 Scanning {len(symbols)} crypto...")
         
-        # Prepare symbols and types
-        all_symbols = []
-        asset_type_map = {}
-        
-        for market_type in ['crypto', 'stocks', 'indices', 'commodities', 'forex']:
-            for item in scan_data[market_type]:
-                symbol = item['symbol']
-                asset_type = item['type']
-                all_symbols.append(symbol)
-                asset_type_map[symbol] = asset_type
-        
-        # Fetch data function
+        # Fetch data function - ONLY BINANCE
         async def fetch_candles(symbol: str, asset_type: str):
             try:
                 candles = await unified_market_service.get_candles(
                     symbol=symbol,
-                    asset_type=asset_type,
+                    asset_type='crypto',
                     timeframe=timeframe,
                     limit=200
                 )
@@ -161,31 +158,32 @@ async def scan_market_for_best_trades(
                 logger.error(f"Error fetching {symbol}: {e}")
                 return None
         
+        # Simple asset type map - all crypto
+        asset_type_map = {s: 'crypto' for s in symbols}
+        
         # Scan for opportunities
         opportunities = await best_trades_service.scan_for_best_trades(
-            symbols=all_symbols,
-            exchange="multi",  # Not used anymore
+            symbols=symbols,
+            exchange="binance",
             min_score=min_score,
             fetch_data_func=fetch_candles,
             asset_types=asset_type_map
         )
         
-        # Get rate limit status
-        rate_status = unified_market_service.get_rate_limit_status()
-        
         logger.info(f"🎯 Found {len(opportunities)} opportunities")
-        logger.info(f"📊 Rate limits: Finnhub {rate_status['finnhub']['percentage']}%, OANDA {rate_status['oanda']['percentage']}%")
         
         return BestTradesResponse(
             success=True,
             count=len(opportunities),
             opportunities=opportunities,
             scan_time=datetime.now().isoformat(),
-            message=f"Scanned {metadata['total_symbols']} assets - Found {len(opportunities)} opportunities"
+            message=f"Scanned {len(symbols)} crypto - Found {len(opportunities)} opportunities"
         )
         
     except Exception as e:
         logger.error(f"❌ Market scan error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
