@@ -8,6 +8,7 @@ from typing import List, Dict, Optional
 import logging
 
 from .service import best_trades_service
+from .ai_only_service import ai_only_service
 from ..market_data.unified_service import unified_market_service
 from ..market_data.market_universe import get_scan_symbols, SCAN_PRESETS
 
@@ -167,17 +168,32 @@ async def scan_market_for_best_trades(
                 logger.error(f"Error fetching {symbol}: {e}")
                 return None
         
-        # Simple asset type map - all crypto
-        asset_type_map = {s: 'crypto' for s in symbols}
+        # AI-ONLY SCAN - No indicators, pure AI analysis
+        opportunities = []
         
-        # Scan for opportunities
-        opportunities = await best_trades_service.scan_for_best_trades(
-            symbols=symbols,
-            exchange="binance",
-            min_score=min_score,
-            fetch_data_func=fetch_candles,
-            asset_types=asset_type_map
-        )
+        for symbol in symbols:
+            try:
+                # Get candles
+                candles = await unified_market_service.get_candles(
+                    symbol=symbol,
+                    asset_type='crypto',
+                    timeframe=timeframe,
+                    limit=200
+                )
+                
+                if not candles:
+                    continue
+                
+                # AI analyzes everything
+                analysis = await ai_only_service.analyze_symbol(symbol, candles)
+                
+                if analysis and analysis.get('score', 0) >= min_score:
+                    opportunities.append(analysis)
+                    logger.info(f"  ✅ {symbol}: {analysis['direction']} @ {analysis['score']}")
+                
+            except Exception as e:
+                logger.error(f"  ❌ {symbol}: {e}")
+                continue
         
         logger.info(f"🎯 Found {len(opportunities)} opportunities")
         
