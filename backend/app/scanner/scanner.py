@@ -6,7 +6,7 @@ import logging
 import asyncio
 from typing import List, Dict
 from ..market_data import BinanceFetcher
-from ..ai import OpenAIVisionAnalyzer
+from ..ai import ClaudeAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -16,13 +16,13 @@ class TradingScanner:
         self,
         binance_key: str = "",
         binance_secret: str = "",
-        openai_key: str = "",
+        claude_key: str = "",
         top_n_coins: int = 30,
         min_confidence: int = 75
     ):
         """Initialize scanner with API clients"""
         self.fetcher = BinanceFetcher(binance_key, binance_secret)
-        self.ai = OpenAIVisionAnalyzer(openai_key)
+        self.ai = ClaudeAnalyzer(claude_key)
         self.top_n_coins = top_n_coins
         self.min_confidence = min_confidence
         

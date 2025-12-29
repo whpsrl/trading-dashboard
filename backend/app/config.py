@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     BINANCE_API_KEY: str = ""
     BINANCE_SECRET: str = ""
     
-    # OpenAI
-    OPENAI_API_KEY: str = ""
+    # Anthropic (Claude)
+    ANTHROPIC_API_KEY: str = ""
     
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""

@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     scanner = TradingScanner(
         binance_key=settings.BINANCE_API_KEY,
         binance_secret=settings.BINANCE_SECRET,
-        openai_key=settings.OPENAI_API_KEY,
+        claude_key=settings.ANTHROPIC_API_KEY,
         top_n_coins=settings.TOP_N_COINS,
         min_confidence=settings.MIN_CONFIDENCE_SCORE
     )

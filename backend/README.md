@@ -1,11 +1,11 @@
-# AI Trading Bot with GPT-4o Vision
+# AI Trading Bot with Claude
 
 Modular Python trading bot that scans top 30 crypto pairs and sends AI-validated signals to Telegram.
 
 ## Features
 
 - 📊 **Data Ingestion**: Fetches top 30 crypto pairs by 24h volume from Binance
-- 🤖 **AI Vision Analysis**: Uses OpenAI GPT-4o Vision to validate setups
+- 🤖 **Claude AI Analysis**: Uses Anthropic Claude Sonnet 4 to validate setups
 - 📱 **Telegram Alerts**: Sends top 3 high-confidence signals
 - 🚀 **Railway Ready**: Includes Dockerfile and deployment config
 
@@ -18,7 +18,7 @@ Create `.env` file:
 ```env
 BINANCE_API_KEY=your_key
 BINANCE_SECRET=your_secret
-OPENAI_API_KEY=sk-your-openai-key
+ANTHROPIC_API_KEY=sk-ant-your-claude-key
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=-1001234567890
 ```
@@ -83,7 +83,7 @@ app/
 
 - `BINANCE_API_KEY`
 - `BINANCE_SECRET`
-- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_CHAT_ID`
 

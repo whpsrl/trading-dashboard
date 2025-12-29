@@ -86,7 +86,7 @@ export default function Home() {
         color: '#666',
         marginBottom: '2rem'
       }}>
-        GPT-4o Vision • Top 30 Crypto • Telegram Alerts
+        Claude Sonnet 4 • Top 30 Crypto • Telegram Alerts
       </p>
 
       <div style={{
@@ -197,7 +197,7 @@ export default function Home() {
         <ul style={{ listStyle: 'none', display: 'grid', gap: '0.5rem' }}>
           <li>1️⃣ Fetches top 30 crypto pairs from Binance by 24h volume</li>
           <li>2️⃣ Analyzes 300 candles on 15m, 1h, 4h timeframes</li>
-          <li>3️⃣ GPT-4o Vision validates each setup with chart analysis</li>
+          <li>3️⃣ Claude AI analyzes 100 candles and validates each setup</li>
           <li>4️⃣ Sends top 3 high-confidence signals to Telegram</li>
         </ul>
       </div>

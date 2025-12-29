@@ -1,7 +1,7 @@
 """
 AI Analysis Module
 """
-from .openai_vision import OpenAIVisionAnalyzer
+from .claude_analyzer import ClaudeAnalyzer
 
-__all__ = ['OpenAIVisionAnalyzer']
+__all__ = ['ClaudeAnalyzer']
 
