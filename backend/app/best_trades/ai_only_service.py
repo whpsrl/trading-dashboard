@@ -96,10 +96,10 @@ IMPORTANTE:
 - Score alto (80+) solo se setup MOLTO forte
 - Sii CRITICO, meglio dire NO che dare falsi segnali"""
 
-            # Chiama AI
+            # Chiama AI - usando modello STABILE con limiti più alti
             logger.info(f"🤖 Calling Gemini AI for {symbol}...")
             response = self.client.models.generate_content(
-                model="gemini-2.0-flash-exp",
+                model="gemini-1.5-flash",  # Modello stabile (non experimental)
                 contents=prompt
             )
             
