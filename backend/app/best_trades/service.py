@@ -85,12 +85,17 @@ class BestTradesService:
             # Step 2: Calculate trade score
             score_data = trade_scorer.calculate_total_score(indicators)
             
-            # Step 3: If score is good, get AI validation
+            # Step 3: If score is good, get AI validation (only for high scores!)
             ai_insights = None
-            if score_data['total_score'] >= 60 and self.is_ai_available():
+            if score_data['total_score'] >= 75 and self.is_ai_available():
+                logger.info(f"🤖 Calling AI for {symbol} (score {score_data['total_score']})")
                 ai_insights = await self._get_ai_validation(
                     symbol, candles, indicators, score_data
                 )
+                if ai_insights:
+                    logger.info(f"✅ AI response received for {symbol}")
+                else:
+                    logger.warning(f"⚠️ AI returned None for {symbol}")
             
             # Step 4: Calculate entry/exit levels
             trade_levels = self._calculate_trade_levels(
