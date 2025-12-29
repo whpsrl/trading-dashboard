@@ -23,19 +23,22 @@ class BestTradesService:
     """
     
     def __init__(self):
-        """Initialize with AI client and trade tracker"""
-        api_key = os.getenv('ANTHROPIC_API_KEY')
+        """Initialize with Gemini AI client and trade tracker"""
+        api_key = os.getenv('GEMINI_API_KEY')
         
         if not api_key:
-            logger.warning("⚠️ ANTHROPIC_API_KEY not set - AI analysis limited")
+            logger.warning("⚠️ GEMINI_API_KEY not set - AI analysis limited")
             self.client = None
         else:
             try:
-                from anthropic import Anthropic
-                self.client = Anthropic(api_key=api_key)
-                logger.info("✅ Best Trades AI initialized")
+                from google import genai
+                self.client = genai.Client(api_key=api_key)
+                logger.info("✅ Best Trades AI initialized (Gemini 2.0 Flash)")
             except ImportError:
-                logger.error("❌ anthropic package not installed")
+                logger.error("❌ google-genai package not installed")
+                self.client = None
+            except Exception as e:
+                logger.error(f"❌ Gemini initialization error: {e}")
                 self.client = None
         
         # Initialize trade tracker
@@ -462,18 +465,16 @@ Rispondi in formato JSON DETTAGLIATO:
     "confidence_level": 1-10
 }}"""
 
-            response = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=2500,  # Aumentato per analisi più profonda
-                temperature=0.2,  # Più deterministico per analisi professionale
-                messages=[{"role": "user", "content": prompt}]
+            response = self.client.models.generate_content(
+                model="gemini-2.0-flash-exp",
+                contents=prompt
             )
             
             # Parse AI response
             import json
             import re
             
-            content = response.content[0].text
+            content = response.text
             
             # Extract JSON
             if "```json" in content:
