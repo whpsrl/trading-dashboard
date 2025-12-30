@@ -8,6 +8,7 @@ export default function CryptoPage() {
   const [scanning, setScanning] = useState(false)
   const [message, setMessage] = useState('')
   const [results, setResults] = useState<any>(null)
+  const [cryptoCount, setCryptoCount] = useState(15)
 
   const runScan = async () => {
     setScanning(true)
@@ -15,9 +16,9 @@ export default function CryptoPage() {
     setResults(null)
 
     try {
-      console.log('🚀 Calling:', `${BACKEND_URL}/api/scan`)
+      console.log('🚀 Calling:', `${BACKEND_URL}/api/scan?top_n=${cryptoCount}`)
       
-      const response = await fetch(`${BACKEND_URL}/api/scan`, {
+      const response = await fetch(`${BACKEND_URL}/api/scan?top_n=${cryptoCount}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -36,15 +37,16 @@ export default function CryptoPage() {
       const data = await response.json()
       console.log('✅ Response data:', data)
 
-      if (data.status === 'started') {
-        setMessage('✅ Scan started! Check Telegram for results in 2-3 minutes.')
+      if (data.success) {
+        setMessage(`✅ Scan complete! Found ${data.count} high-confidence setups`)
+        setResults(data.setups || [])
       } else if (data.error) {
         setMessage('❌ ' + data.error)
+        setResults(null)
       } else {
-        setMessage('⚠️ Scan request sent. Results will be sent to Telegram.')
+        setMessage('⚠️ ' + (data.message || 'Unknown response'))
+        setResults(data)
       }
-
-      setResults(data)
     } catch (error) {
       console.error('❌ Full error:', error)
       setMessage('❌ Failed to scan market: ' + (error as Error).message)
@@ -112,10 +114,45 @@ export default function CryptoPage() {
         <p style={{
           fontSize: '1rem',
           color: '#666',
-          marginBottom: '2rem'
+          marginBottom: '1rem'
         }}>
-          Claude Sonnet 4 • Top 15 Crypto • Telegram Alerts
+          Claude Sonnet 4 • Multi-Timeframe Analysis • Telegram Alerts
         </p>
+
+        {/* Crypto Count Selector */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          marginBottom: '1.5rem',
+          padding: '1rem',
+          background: '#f9fafb',
+          borderRadius: '8px'
+        }}>
+          <label style={{ fontSize: '0.95rem', fontWeight: '600', color: '#374151' }}>
+            🎯 Crypto to scan:
+          </label>
+          <select 
+            value={cryptoCount}
+            onChange={(e) => setCryptoCount(Number(e.target.value))}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              border: '2px solid #e5e7eb',
+              fontSize: '0.95rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              background: 'white'
+            }}
+          >
+            <option value={5}>Top 5</option>
+            <option value={10}>Top 10</option>
+            <option value={15}>Top 15</option>
+          </select>
+          <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+            by 24h volume
+          </span>
+        </div>
 
         <div style={{
           display: 'grid',
@@ -191,25 +228,126 @@ export default function CryptoPage() {
           </div>
         )}
 
-        {results && (
-          <div style={{
-            padding: '1.5rem',
-            background: '#f9fafb',
-            borderRadius: '8px',
-            fontSize: '0.875rem'
-          }}>
-            <h3 style={{ marginBottom: '0.75rem', fontWeight: 'bold' }}>Response:</h3>
-            <pre style={{
-              background: '#1f2937',
-              color: '#10b981',
-              padding: '1rem',
-              borderRadius: '6px',
-              overflow: 'auto',
-              fontSize: '0.8rem',
-              maxHeight: '400px'
+        {results && Array.isArray(results) && results.length > 0 && (
+          <div style={{ marginTop: '2rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+              📊 Found {results.length} Setups
+            </h2>
+            
+            <div style={{
+              display: 'grid',
+              gap: '1rem',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))'
             }}>
-              {JSON.stringify(results, null, 2)}
-            </pre>
+              {results.map((setup: any, idx: number) => (
+                <div key={idx} style={{
+                  background: 'white',
+                  border: '2px solid ' + (setup.direction === 'LONG' ? '#10b981' : setup.direction === 'SHORT' ? '#ef4444' : '#6b7280'),
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
+                      {setup.symbol}
+                    </h3>
+                    <span style={{
+                      background: setup.direction === 'LONG' ? '#d1fae5' : setup.direction === 'SHORT' ? '#fee2e2' : '#e5e7eb',
+                      color: setup.direction === 'LONG' ? '#065f46' : setup.direction === 'SHORT' ? '#991b1b' : '#374151',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '9999px',
+                      fontSize: '0.875rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {setup.direction}
+                    </span>
+                  </div>
+
+                  {/* Timeframe & Confidence */}
+                  <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <span style={{
+                      background: '#dbeafe',
+                      color: '#1e40af',
+                      padding: '0.25rem 0.625rem',
+                      borderRadius: '6px',
+                      fontSize: '0.875rem',
+                      fontWeight: '600'
+                    }}>
+                      ⏰ {setup.timeframe}
+                    </span>
+                    <span style={{
+                      background: '#fef3c7',
+                      color: '#92400e',
+                      padding: '0.25rem 0.625rem',
+                      borderRadius: '6px',
+                      fontSize: '0.875rem',
+                      fontWeight: '600'
+                    }}>
+                      🎯 {setup.confidence}%
+                    </span>
+                  </div>
+
+                  {/* Price Levels */}
+                  <div style={{
+                    background: '#f9fafb',
+                    padding: '0.875rem',
+                    borderRadius: '8px',
+                    marginBottom: '1rem',
+                    fontSize: '0.875rem'
+                  }}>
+                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280' }}>💰 Entry:</span>
+                        <span style={{ fontWeight: 'bold' }}>${setup.entry?.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#10b981' }}>🎯 Take Profit:</span>
+                        <span style={{ fontWeight: 'bold', color: '#10b981' }}>${setup.take_profit?.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#ef4444' }}>🛡️ Stop Loss:</span>
+                        <span style={{ fontWeight: 'bold', color: '#ef4444' }}>${setup.stop_loss?.toFixed(2)}</span>
+                      </div>
+                      {setup.current_price && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid #e5e7eb' }}>
+                          <span style={{ color: '#6b7280' }}>Current:</span>
+                          <span style={{ fontWeight: 'bold' }}>${setup.current_price?.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* AI Reasoning */}
+                  <div style={{
+                    background: '#eff6ff',
+                    padding: '0.875rem',
+                    borderRadius: '8px',
+                    fontSize: '0.8rem',
+                    lineHeight: '1.5',
+                    color: '#1e40af'
+                  }}>
+                    <strong>🤖 AI Analysis:</strong><br />
+                    {setup.reasoning}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {results && Array.isArray(results) && results.length === 0 && (
+          <div style={{
+            padding: '2rem',
+            background: '#fef3c7',
+            borderRadius: '12px',
+            textAlign: 'center',
+            marginTop: '1rem'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🔍</div>
+            <p style={{ fontSize: '1.1rem', color: '#92400e', margin: 0 }}>
+              No high-confidence setups found. Try again later!
+            </p>
           </div>
         )}
 

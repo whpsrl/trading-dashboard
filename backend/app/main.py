@@ -95,20 +95,67 @@ async def health():
 
 
 @app.post("/api/scan")
-async def run_scan(background_tasks: BackgroundTasks):
+async def run_scan(top_n: int = 15):
     """
-    Run market scan and send alerts to Telegram
+    Run market scan and return results + send to Telegram
+    
+    Args:
+        top_n: Number of top crypto pairs to scan (5, 10, or 15)
     """
     if not scanner:
         return {"error": "Scanner not initialized"}
     
-    # Run scan in background
-    background_tasks.add_task(perform_scan_and_alert)
-    
-    return {
-        "status": "started",
-        "message": "Market scan started in background"
-    }
+    try:
+        logger.info(f"🔍 Starting market scan for top {top_n} crypto...")
+        
+        # Temporarily override scanner's top_n
+        original_top_n = scanner.top_n_coins
+        scanner.top_n_coins = top_n
+        
+        # Scan market
+        setups = await scanner.scan_market(
+            timeframes=['15m', '1h', '4h'],
+            max_results=50  # Allow more results, filter on frontend
+        )
+        
+        # Restore original
+        scanner.top_n_coins = original_top_n
+        
+        logger.info(f"✅ Scan complete - found {len(setups) if setups else 0} setups")
+        
+        # Send to Telegram in background (non-blocking)
+        if setups and telegram and telegram.is_available():
+            import asyncio
+            asyncio.create_task(send_telegram_alerts(setups))
+        
+        return {
+            "success": True,
+            "count": len(setups) if setups else 0,
+            "setups": setups or [],
+            "message": f"Found {len(setups) if setups else 0} high-confidence setups"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Scan error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {
+            "success": False,
+            "error": str(e),
+            "count": 0,
+            "setups": []
+        }
+
+
+async def send_telegram_alerts(setups):
+    """Send alerts to Telegram (background task)"""
+    try:
+        await telegram.send_scan_summary(setups)
+        for setup in setups:
+            await telegram.send_alert(setup)
+        logger.info("✅ Telegram alerts sent!")
+    except Exception as e:
+        logger.error(f"❌ Telegram error: {e}")
 
 
 @app.get("/api/scan/test")
