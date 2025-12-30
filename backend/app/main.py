@@ -123,16 +123,26 @@ async def test_scan_one_symbol():
         logger.info("🔍 Test scan: BTC/USDT only")
         
         # Fetch BTC data
+        logger.info("📊 Fetching BTC/USDT data...")
         ohlcv = await scanner.fetcher.fetch_ohlcv("BTC/USDT", "1h", 100)
         
         if not ohlcv:
-            return {"error": "Failed to fetch BTC data"}
+            return {"error": "Failed to fetch BTC data", "step": "fetch_ohlcv"}
+        
+        logger.info(f"✅ Fetched {len(ohlcv)} candles")
         
         # AI analysis
+        logger.info("🤖 Calling Claude AI...")
         analysis = await scanner.ai.analyze_setup("BTC/USDT", ohlcv, "1h")
         
         if not analysis:
-            return {"error": "AI analysis failed", "ai_available": scanner.ai.is_available()}
+            return {
+                "error": "AI analysis returned None",
+                "ai_available": scanner.ai.is_available(),
+                "step": "ai_analysis"
+            }
+        
+        logger.info(f"✅ Analysis complete: {analysis}")
         
         return {
             "success": True,
@@ -143,9 +153,11 @@ async def test_scan_one_symbol():
     except Exception as e:
         logger.error(f"❌ Test scan error: {e}")
         import traceback
+        error_trace = traceback.format_exc()
+        logger.error(error_trace)
         return {
             "error": str(e),
-            "traceback": traceback.format_exc()
+            "traceback": error_trace
         }
 
 
@@ -153,6 +165,8 @@ async def perform_scan_and_alert():
     """Perform scan and send Telegram alerts"""
     try:
         logger.info("🔍 Starting market scan...")
+        logger.info(f"   Scanner: {scanner is not None}")
+        logger.info(f"   Telegram: {telegram is not None}")
         
         # Scan market
         setups = await scanner.scan_market(
@@ -160,27 +174,45 @@ async def perform_scan_and_alert():
             max_results=settings.MAX_ALERTS_PER_SCAN
         )
         
+        logger.info(f"✅ Scan complete - found {len(setups) if setups else 0} setups")
+        
         if not setups:
-            logger.info("No setups found")
+            logger.info("ℹ️  No setups found matching criteria")
             if telegram and telegram.is_available():
                 await telegram.send_scan_summary([])
             return
         
-        logger.info(f"🎯 Found {len(setups)} top setups")
+        logger.info(f"🎯 Top {len(setups)} setups to send:")
+        for s in setups:
+            logger.info(f"   - {s.get('symbol')} {s.get('timeframe')} {s.get('direction')} (confidence: {s.get('confidence')}%)")
         
         # Send to Telegram
         if telegram and telegram.is_available():
+            logger.info("📱 Sending to Telegram...")
             await telegram.send_scan_summary(setups)
             
             for setup in setups:
                 await telegram.send_alert(setup)
+            
+            logger.info("✅ All alerts sent!")
+        else:
+            logger.warning("⚠️  Telegram not available")
                 
-        logger.info("✅ Scan complete and alerts sent!")
+        logger.info("✅ Scan complete!")
         
     except Exception as e:
         logger.error(f"❌ Scan error: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        # Try to send error to telegram
+        if telegram and telegram.is_available():
+            try:
+                await telegram.bot.send_message(
+                    chat_id=telegram.chat_id,
+                    text=f"❌ Scan Error:\n{str(e)}"
+                )
+            except:
+                pass
 
 
 @app.get("/api/scan/quick/{symbol}")
