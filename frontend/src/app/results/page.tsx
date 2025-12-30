@@ -93,13 +93,13 @@ export default function ResultsPage() {
           }}>
             <StatCard
               title="Total P/L"
-              value={`${stats.total_pl >= 0 ? '+' : ''}${stats.total_pl}%`}
-              icon={stats.total_pl >= 0 ? "💰" : "📉"}
-              color={stats.total_pl >= 0 ? "#10b981" : "#ef4444"}
+              value={`${(stats.total_pl || 0) >= 0 ? '+' : ''}${stats.total_pl || 0}%`}
+              icon={(stats.total_pl || 0) >= 0 ? "💰" : "📉"}
+              color={(stats.total_pl || 0) >= 0 ? "#10b981" : "#ef4444"}
             />
             <StatCard
               title="Win/Loss"
-              value={`${stats.win_count}W / ${stats.loss_count}L`}
+              value={`${stats.win_count || 0}W / ${stats.loss_count || 0}L`}
               icon="📊"
               color="#667eea"
             />
@@ -123,15 +123,15 @@ export default function ResultsPage() {
             />
             <StatCard
               title="Expected Value"
-              value={`${stats.expected_value >= 0 ? '+' : ''}${stats.expected_value}%`}
+              value={`${(stats.expected_value || 0) >= 0 ? '+' : ''}${stats.expected_value || 0}%`}
               icon="🎲"
-              color={stats.expected_value >= 0 ? "#10b981" : "#ef4444"}
+              color={(stats.expected_value || 0) >= 0 ? "#10b981" : "#ef4444"}
             />
             <StatCard
               title="Risk/Reward"
-              value={`${stats.risk_reward.toFixed(2)}:1`}
+              value={`${(stats.risk_reward || 0).toFixed(2)}:1`}
               icon="⚖️"
-              color={stats.risk_reward >= 2 ? "#10b981" : stats.risk_reward >= 1.5 ? "#f59e0b" : "#ef4444"}
+              color={(stats.risk_reward || 0) >= 2 ? "#10b981" : (stats.risk_reward || 0) >= 1.5 ? "#f59e0b" : "#ef4444"}
             />
             <StatCard
               title="Learning Score"
@@ -233,8 +233,8 @@ export default function ResultsPage() {
                     }}>
                       {stats.avg_loss > 0 ? (stats.avg_profit / stats.avg_loss).toFixed(2) : 'N/A'}:1
                     </div>
-                    <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                      {stats.avg_profit / stats.avg_loss >= 2 ? '✅ Excellent' : stats.avg_profit / stats.avg_loss >= 1.5 ? '⚠️ Good' : '❌ Needs improvement'}
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                      {(stats.risk_reward || 0) >= 2 ? '✅ Excellent' : (stats.risk_reward || 0) >= 1.5 ? '⚠️ Good' : '❌ Needs improvement'}
                     </div>
                   </div>
                 </div>

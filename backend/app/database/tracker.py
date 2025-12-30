@@ -157,10 +157,16 @@ class TradeTracker:
                 return {
                     'total_setups': total_setups,
                     'tracked_trades': 0,
+                    'win_count': 0,
+                    'loss_count': 0,
                     'win_rate': 0,
                     'avg_profit': 0,
                     'avg_loss': 0,
-                    'learning_score': 0
+                    'total_pl': 0,
+                    'expected_value': 0,
+                    'risk_reward': 0,
+                    'learning_score': 0,
+                    'total_scans': db.query(ScanResult).count()
                 }
             
             winners = [t for t in closed_trades if t.status == 'hit_tp']
