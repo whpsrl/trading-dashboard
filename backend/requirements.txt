@@ -12,6 +12,7 @@ ccxt>=4.5.0
 
 # AI
 anthropic>=0.40.0
+groq>=0.9.0
 
 # Telegram
 python-telegram-bot==21.0

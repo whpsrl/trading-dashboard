@@ -45,6 +45,7 @@ async def lifespan(app: FastAPI):
         binance_key=settings.BINANCE_API_KEY,
         binance_secret=settings.BINANCE_SECRET,
         claude_key=settings.ANTHROPIC_API_KEY,
+        groq_key=settings.GROQ_API_KEY,
         top_n_coins=settings.TOP_N_COINS,
         min_confidence=settings.MIN_CONFIDENCE_SCORE
     )
@@ -103,27 +104,29 @@ async def health():
         "status": "online",
         "scanner_available": scanner is not None,
         "telegram_available": telegram.is_available() if telegram else False,
-        "ai_available": scanner.ai.is_available() if scanner else False
+        "ai_claude_available": scanner.claude.is_available() if scanner else False,
+        "ai_groq_available": scanner.groq.is_available() if scanner else False
     }
 
 
 @app.post("/api/scan")
-async def run_scan(top_n: int = 15):
+async def run_scan(top_n: int = 15, ai_provider: str = 'claude'):
     """
     Run market scan and return results + send to Telegram
     
     Args:
-        top_n: Number of top crypto pairs to scan (5, 10, or 15)
+        top_n: Number of top crypto pairs to scan (5, 10, 15, or 30)
+        ai_provider: AI to use - 'claude' (default) or 'groq'
     """
     if not scanner:
         return {"error": "Scanner not initialized"}
     
     try:
-        logger.info(f"🔍 Starting market scan for top {top_n} crypto...")
+        logger.info(f"🔍 Starting market scan for top {top_n} crypto with {ai_provider.upper()}...")
         
         # Create scan session in database
         scan_id = trade_tracker.create_scan_session(
-            scan_type='manual',
+            scan_type=f'manual_{ai_provider}',
             top_n=top_n,
             timeframes=['15m', '1h', '4h']
         )
@@ -132,10 +135,11 @@ async def run_scan(top_n: int = 15):
         original_top_n = scanner.top_n_coins
         scanner.top_n_coins = top_n
         
-        # Scan market
+        # Scan market with selected AI
         setups = await scanner.scan_market(
             timeframes=['15m', '1h', '4h'],
-            max_results=50  # Allow more results, filter on frontend
+            max_results=50,  # Allow more results, filter on frontend
+            ai_provider=ai_provider
         )
         
         # Restore original

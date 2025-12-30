@@ -9,6 +9,7 @@ export default function CryptoPage() {
   const [message, setMessage] = useState('')
   const [results, setResults] = useState<any>(null)
   const [cryptoCount, setCryptoCount] = useState(15)
+  const [aiProvider, setAiProvider] = useState('claude')
 
   const runScan = async () => {
     setScanning(true)
@@ -16,9 +17,10 @@ export default function CryptoPage() {
     setResults(null)
 
     try {
-      console.log('🚀 Calling:', `${BACKEND_URL}/api/scan?top_n=${cryptoCount}`)
+      const url = `${BACKEND_URL}/api/scan?top_n=${cryptoCount}&ai_provider=${aiProvider}`
+      console.log('🚀 Calling:', url)
       
-      const response = await fetch(`${BACKEND_URL}/api/scan?top_n=${cryptoCount}`, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -119,39 +121,88 @@ export default function CryptoPage() {
           Claude Sonnet 4 • Multi-Timeframe Analysis • Telegram Alerts
         </p>
 
-        {/* Crypto Count Selector */}
+        {/* Settings Selectors */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          marginBottom: '1.5rem',
-          padding: '1rem',
-          background: '#f9fafb',
-          borderRadius: '8px'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '1rem',
+          marginBottom: '1.5rem'
         }}>
-          <label style={{ fontSize: '0.95rem', fontWeight: '600', color: '#374151' }}>
-            🎯 Crypto to scan:
-          </label>
-          <select 
-            value={cryptoCount}
-            onChange={(e) => setCryptoCount(Number(e.target.value))}
-            style={{
-              padding: '0.5rem 1rem',
-              borderRadius: '6px',
-              border: '2px solid #e5e7eb',
-              fontSize: '0.95rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              background: 'white'
-            }}
-          >
-            <option value={5}>Top 5</option>
-            <option value={10}>Top 10</option>
-            <option value={15}>Top 15</option>
-          </select>
-          <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-            by 24h volume
-          </span>
+          {/* Crypto Count */}
+          <div style={{
+            padding: '1rem',
+            background: '#f9fafb',
+            borderRadius: '8px',
+            border: '2px solid #e5e7eb'
+          }}>
+            <label style={{ 
+              display: 'block',
+              fontSize: '0.85rem', 
+              fontWeight: '700', 
+              color: '#374151',
+              marginBottom: '0.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              🎯 Crypto to Scan
+            </label>
+            <select 
+              value={cryptoCount}
+              onChange={(e) => setCryptoCount(Number(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '0.625rem 1rem',
+                borderRadius: '6px',
+                border: '2px solid #d1d5db',
+                fontSize: '0.95rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                background: 'white'
+              }}
+            >
+              <option value={5}>Top 5</option>
+              <option value={10}>Top 10</option>
+              <option value={15}>Top 15 (default)</option>
+              <option value={30}>Top 30 (slower)</option>
+            </select>
+          </div>
+
+          {/* AI Provider */}
+          <div style={{
+            padding: '1rem',
+            background: '#f9fafb',
+            borderRadius: '8px',
+            border: '2px solid #e5e7eb'
+          }}>
+            <label style={{ 
+              display: 'block',
+              fontSize: '0.85rem', 
+              fontWeight: '700', 
+              color: '#374151',
+              marginBottom: '0.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              🤖 AI Provider
+            </label>
+            <select 
+              value={aiProvider}
+              onChange={(e) => setAiProvider(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.625rem 1rem',
+                borderRadius: '6px',
+                border: '2px solid #d1d5db',
+                fontSize: '0.95rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                background: 'white'
+              }}
+            >
+              <option value="claude">🧠 Claude Sonnet 4 (best quality)</option>
+              <option value="groq">⚡ Groq Llama 3.3 (ultra fast)</option>
+            </select>
+          </div>
         </div>
 
         <div style={{

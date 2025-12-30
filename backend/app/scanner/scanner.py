@@ -6,7 +6,7 @@ import logging
 import asyncio
 from typing import List, Dict
 from ..market_data import BinanceFetcher
-from ..ai import ClaudeAnalyzer
+from ..ai import ClaudeAnalyzer, GroqAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -17,28 +17,57 @@ class TradingScanner:
         binance_key: str = "",
         binance_secret: str = "",
         claude_key: str = "",
+        groq_key: str = "",
         top_n_coins: int = 15,
         min_confidence: int = 60
     ):
         """Initialize scanner with API clients"""
         self.fetcher = BinanceFetcher(binance_key, binance_secret)
-        self.ai = ClaudeAnalyzer(claude_key)
+        
+        # Initialize both AI providers
+        self.claude = ClaudeAnalyzer(claude_key)
+        self.groq = GroqAnalyzer(groq_key)
+        
+        # Default to Claude (backward compatibility)
+        self.ai = self.claude
+        self.current_provider = 'claude'
+        
         self.top_n_coins = top_n_coins
         self.min_confidence = min_confidence
         
-        logger.info("✅ Trading Scanner initialized")
+        logger.info(f"✅ Trading Scanner initialized (Claude: {self.claude.is_available()}, Groq: {self.groq.is_available()})")
+    
+    def set_ai_provider(self, provider: str = 'claude'):
+        """Switch between AI providers"""
+        if provider == 'groq' and self.groq.is_available():
+            self.ai = self.groq
+            self.current_provider = 'groq'
+            logger.info("🚀 Switched to Groq AI")
+        elif provider == 'claude' and self.claude.is_available():
+            self.ai = self.claude
+            self.current_provider = 'claude'
+            logger.info("🤖 Switched to Claude AI")
+        else:
+            logger.warning(f"⚠️  AI provider '{provider}' not available, keeping {self.current_provider}")
     
     async def scan_market(
         self,
         timeframes: List[str] = ['15m', '1h', '4h'],
-        max_results: int = 3
+        max_results: int = 3,
+        ai_provider: str = None
     ) -> List[Dict]:
         """
         Scan market for best setups
         
         Returns top N setups across all coins and timeframes
         """
+        # Temporarily switch AI provider if requested
+        original_provider = self.current_provider
+        if ai_provider:
+            self.set_ai_provider(ai_provider)
+        
         logger.info(f"🔍 Starting market scan...")
+        logger.info(f"   AI Provider: {self.current_provider.upper()}")
         logger.info(f"   Coins: Top {self.top_n_coins}")
         logger.info(f"   Timeframes: {timeframes}")
         logger.info(f"   Min confidence: {self.min_confidence}")
@@ -83,6 +112,10 @@ class TradingScanner:
         top_setups = all_setups[:max_results]
         
         logger.info(f"🎯 Found {len(all_setups)} valid setups, returning top {len(top_setups)}")
+        
+        # Restore original provider if it was changed
+        if ai_provider and ai_provider != original_provider:
+            self.set_ai_provider(original_provider)
         
         return top_setups
     

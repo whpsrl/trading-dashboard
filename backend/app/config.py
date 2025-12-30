@@ -9,8 +9,9 @@ class Settings(BaseSettings):
     BINANCE_API_KEY: str = ""
     BINANCE_SECRET: str = ""
     
-    # Anthropic (Claude)
-    ANTHROPIC_API_KEY: str = ""
+    # AI Providers
+    ANTHROPIC_API_KEY: str = ""  # Claude
+    GROQ_API_KEY: str = ""  # Groq (optional)
     
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""
