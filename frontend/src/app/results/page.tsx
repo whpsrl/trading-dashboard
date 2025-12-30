@@ -92,9 +92,15 @@ export default function ResultsPage() {
             marginBottom: '2rem'
           }}>
             <StatCard
-              title="Total Setups"
-              value={stats.total_setups}
-              icon="🎯"
+              title="Total P/L"
+              value={`${stats.total_pl >= 0 ? '+' : ''}${stats.total_pl}%`}
+              icon={stats.total_pl >= 0 ? "💰" : "📉"}
+              color={stats.total_pl >= 0 ? "#10b981" : "#ef4444"}
+            />
+            <StatCard
+              title="Win/Loss"
+              value={`${stats.win_count}W / ${stats.loss_count}L`}
+              icon="📊"
               color="#667eea"
             />
             <StatCard
@@ -116,16 +122,22 @@ export default function ResultsPage() {
               color="#ef4444"
             />
             <StatCard
+              title="Expected Value"
+              value={`${stats.expected_value >= 0 ? '+' : ''}${stats.expected_value}%`}
+              icon="🎲"
+              color={stats.expected_value >= 0 ? "#10b981" : "#ef4444"}
+            />
+            <StatCard
+              title="Risk/Reward"
+              value={`${stats.risk_reward.toFixed(2)}:1`}
+              icon="⚖️"
+              color={stats.risk_reward >= 2 ? "#10b981" : stats.risk_reward >= 1.5 ? "#f59e0b" : "#ef4444"}
+            />
+            <StatCard
               title="Learning Score"
               value={stats.learning_score}
               icon="🧠"
               color="#f59e0b"
-            />
-            <StatCard
-              title="Tracked Trades"
-              value={stats.tracked_trades}
-              icon="📊"
-              color="#6366f1"
             />
           </div>
 

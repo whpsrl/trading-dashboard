@@ -166,10 +166,23 @@ class TradeTracker:
             winners = [t for t in closed_trades if t.status == 'hit_tp']
             losers = [t for t in closed_trades if t.status == 'hit_sl']
             
-            win_rate = (len(winners) / len(closed_trades)) * 100 if closed_trades else 0
+            win_count = len(winners)
+            loss_count = len(losers)
             
-            avg_profit = sum([t.profit_loss_pct for t in winners]) / len(winners) if winners else 0
-            avg_loss = sum([abs(t.profit_loss_pct) for t in losers]) / len(losers) if losers else 0
+            win_rate = (win_count / len(closed_trades)) * 100 if closed_trades else 0
+            loss_rate = 100 - win_rate
+            
+            avg_profit = sum([t.profit_loss_pct for t in winners]) / win_count if winners else 0
+            avg_loss = sum([abs(t.profit_loss_pct) for t in losers]) / loss_count if losers else 0
+            
+            # Total P/L (net profit/loss)
+            total_pl = sum([t.profit_loss_pct for t in closed_trades])
+            
+            # Expected Value per trade
+            expected_value = (win_rate / 100 * avg_profit) - (loss_rate / 100 * avg_loss)
+            
+            # Risk/Reward ratio
+            risk_reward = avg_profit / avg_loss if avg_loss > 0 else 0
             
             # Learning score: combination of win rate and risk/reward
             learning_score = min(100, win_rate * (1 + avg_profit / 10))
@@ -177,9 +190,14 @@ class TradeTracker:
             return {
                 'total_setups': total_setups,
                 'tracked_trades': len(closed_trades),
+                'win_count': win_count,
+                'loss_count': loss_count,
                 'win_rate': round(win_rate, 2),
                 'avg_profit': round(avg_profit, 2),
                 'avg_loss': round(avg_loss, 2),
+                'total_pl': round(total_pl, 2),
+                'expected_value': round(expected_value, 2),
+                'risk_reward': round(risk_reward, 2),
                 'learning_score': round(learning_score, 2),
                 'total_scans': db.query(ScanResult).count()
             }
