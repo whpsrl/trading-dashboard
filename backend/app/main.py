@@ -2,6 +2,7 @@
 Trading Bot with AI Vision - Main FastAPI Application
 """
 import logging
+import asyncio
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
