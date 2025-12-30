@@ -47,6 +47,10 @@ class TelegramNotifier:
                 'NEUTRAL': '⚪'
             }.get(setup.get('direction', 'NEUTRAL'), '⚪')
             
+            # Get AI provider (default to Claude for backward compatibility)
+            ai_provider = setup.get('ai_provider', 'claude').upper()
+            ai_emoji = '🤖' if ai_provider == 'CLAUDE' else '⚡'
+            
             message = f"""
 {direction_emoji} **TRADING SIGNAL** {direction_emoji}
 
@@ -59,7 +63,7 @@ class TelegramNotifier:
 🎯 **Take Profit:** ${setup.get('take_profit', 0):.4f}
 🛑 **Stop Loss:** ${setup.get('stop_loss', 0):.4f}
 
-📊 **AI Analysis:**
+📊 **AI Analysis** ({ai_emoji} {ai_provider}):
 {setup.get('reasoning', 'No reasoning provided')}
 
 ⏰ _Signal generated automatically_

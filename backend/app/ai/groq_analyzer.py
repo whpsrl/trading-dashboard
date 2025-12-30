@@ -4,6 +4,7 @@ Ultra-fast inference with Llama models
 """
 import logging
 import json
+import asyncio
 from typing import Dict, Optional, List
 
 logger = logging.getLogger(__name__)
@@ -100,10 +101,11 @@ Consider:
 Be critical - only recommend trades with clear, high-probability setups. 
 If the setup is unclear or risky, set valid to false and confidence below 60."""
 
-            # Call Groq (synchronous, but very fast!)
+            # Call Groq (wrap sync call in async for non-blocking)
             logger.info(f"🚀 Calling Groq AI for {symbol}...")
             
-            response = self.client.chat.completions.create(
+            response = await asyncio.to_thread(
+                self.client.chat.completions.create,
                 model="llama-3.3-70b-versatile",  # Fast and accurate
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.2,

@@ -126,6 +126,7 @@ If the setup is unclear or risky, set valid to false and confidence below 60."""
             result['symbol'] = symbol
             result['timeframe'] = timeframe
             result['current_price'] = current_price
+            result['ai_provider'] = 'claude'  # Mark as Claude
             
             logger.info(f"✅ Analysis complete: {symbol} - Confidence: {result.get('confidence', 0)}%")
             
