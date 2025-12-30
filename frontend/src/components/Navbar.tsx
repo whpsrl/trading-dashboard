@@ -9,6 +9,8 @@ export default function Navbar() {
   const links = [
     { href: '/', label: 'Home' },
     { href: '/crypto', label: 'Crypto' },
+    { href: '/results', label: 'Results' },
+    { href: '/diagnostics', label: 'Diagnostics' },
     { href: '/indices', label: 'Indices' },
     { href: '/stocks', label: 'Stocks' },
     { href: '/commodities', label: 'Commodities' },

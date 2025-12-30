@@ -4,6 +4,9 @@ uvicorn[standard]==0.27.0
 python-dotenv==1.0.0
 pydantic-settings==2.1.0
 
+# Database
+sqlalchemy==2.0.25
+
 # Market Data
 ccxt>=4.5.0
 
@@ -12,6 +15,9 @@ anthropic>=0.40.0
 
 # Telegram
 python-telegram-bot==21.0
+
+# Scheduler (for auto-scan)
+apscheduler==3.10.4
 
 # Utilities (no plotly/kaleido needed without vision)
 

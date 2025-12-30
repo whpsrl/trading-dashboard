@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 from .config import settings
 from .scanner import TradingScanner
 from .telegram import TelegramNotifier
+from .database import init_db
+from .database.tracker import trade_tracker
+from .scheduler import AutoScanner
 
 # Load environment variables
 load_dotenv()
@@ -24,14 +27,18 @@ logger = logging.getLogger(__name__)
 # Global instances
 scanner: TradingScanner = None
 telegram: TelegramNotifier = None
+auto_scanner: AutoScanner = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
-    global scanner, telegram
+    global scanner, telegram, auto_scanner
     
     logger.info("🚀 Starting Trading Bot...")
+    
+    # Initialize database
+    init_db()
     
     # Initialize scanner
     scanner = TradingScanner(
@@ -48,11 +55,17 @@ async def lifespan(app: FastAPI):
         chat_id=settings.TELEGRAM_CHAT_ID
     )
     
-    logger.info("✅ All services initialized")
+    # Initialize auto-scanner
+    auto_scanner = AutoScanner(scanner, telegram, trade_tracker)
+    auto_scanner.start()
+    
+    logger.info("✅ All services initialized (including hourly auto-scan)")
     
     yield
     
     logger.info("👋 Shutting down...")
+    if auto_scanner:
+        auto_scanner.stop()
 
 
 # Create FastAPI app
@@ -108,6 +121,13 @@ async def run_scan(top_n: int = 15):
     try:
         logger.info(f"🔍 Starting market scan for top {top_n} crypto...")
         
+        # Create scan session in database
+        scan_id = trade_tracker.create_scan_session(
+            scan_type='manual',
+            top_n=top_n,
+            timeframes=['15m', '1h', '4h']
+        )
+        
         # Temporarily override scanner's top_n
         original_top_n = scanner.top_n_coins
         scanner.top_n_coins = top_n
@@ -123,15 +143,30 @@ async def run_scan(top_n: int = 15):
         
         logger.info(f"✅ Scan complete - found {len(setups) if setups else 0} setups")
         
-        # Send to Telegram in background (non-blocking)
+        # Save setups to database
+        if setups:
+            for setup in setups:
+                trade_tracker.save_setup(setup, scan_id=scan_id)
+        
+        # Complete scan session
+        high_conf_count = len([s for s in setups if s.get('confidence', 0) >= 60]) if setups else 0
+        trade_tracker.complete_scan_session(
+            scan_id=scan_id,
+            setups_count=len(setups) if setups else 0,
+            high_confidence_count=high_conf_count
+        )
+        
+        # Send to Telegram in background (top 5 only)
         if setups and telegram and telegram.is_available():
             import asyncio
-            asyncio.create_task(send_telegram_alerts(setups))
+            top_5_setups = sorted(setups, key=lambda x: x.get('confidence', 0), reverse=True)[:5]
+            asyncio.create_task(send_telegram_alerts(top_5_setups))
         
         return {
             "success": True,
             "count": len(setups) if setups else 0,
             "setups": setups or [],
+            "scan_id": scan_id,
             "message": f"Found {len(setups) if setups else 0} high-confidence setups"
         }
         
@@ -276,6 +311,59 @@ async def quick_scan(symbol: str, timeframe: str = '15m'):
         "success": bool(result and not result.get('error')),
         "data": result
     }
+
+
+@app.get("/api/stats")
+async def get_stats():
+    """Get overall statistics and learning metrics"""
+    try:
+        stats = trade_tracker.get_stats()
+        return {
+            "success": True,
+            "stats": stats
+        }
+    except Exception as e:
+        logger.error(f"❌ Error getting stats: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@app.get("/api/results")
+async def get_recent_results(limit: int = 20):
+    """Get recent scan results"""
+    try:
+        scans = trade_tracker.get_recent_scans(limit=limit)
+        return {
+            "success": True,
+            "count": len(scans),
+            "scans": scans
+        }
+    except Exception as e:
+        logger.error(f"❌ Error getting results: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@app.get("/api/results/{scan_id}")
+async def get_scan_setups(scan_id: int):
+    """Get all setups from a specific scan"""
+    try:
+        setups = trade_tracker.get_setups_by_scan(scan_id)
+        return {
+            "success": True,
+            "count": len(setups),
+            "setups": setups
+        }
+    except Exception as e:
+        logger.error(f"❌ Error getting scan setups: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 
 @app.get("/api/test/telegram")
