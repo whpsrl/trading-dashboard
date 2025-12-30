@@ -61,6 +61,14 @@ class ClaudeAnalyzer:
                 for i, c in enumerate(recent_candles)
             ])
             
+            # Timeframe-specific targets
+            tf_targets = {
+                '15m': 'Take profit should target 1-2% move (scalping - tight stops)',
+                '1h': 'Take profit should target 2-4% move (intraday - medium targets)',
+                '4h': 'Take profit should target 4-8% move (swing trade - wider targets)'
+            }
+            target_guidance = tf_targets.get(timeframe, 'Take profit should be appropriate for the timeframe')
+            
             # Prepare prompt
             prompt = f"""You are an expert institutional crypto trader analyzing {symbol} on {timeframe} timeframe.
 
@@ -81,12 +89,15 @@ Analyze this data and provide a trading recommendation in JSON format:
   "reasoning": "Two sentence technical rationale explaining your analysis"
 }}
 
+IMPORTANT - Timeframe-specific targets:
+{target_guidance}
+
 Consider:
 - Trend direction and strength
 - Support and resistance levels
 - Volume patterns
 - Price action and momentum
-- Risk/reward ratio
+- Risk/reward ratio (minimum 2:1)
 
 Be critical - only recommend trades with clear, high-probability setups. 
 If the setup is unclear or risky, set valid to false and confidence below 60."""
