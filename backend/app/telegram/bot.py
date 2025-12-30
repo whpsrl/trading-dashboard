@@ -51,6 +51,23 @@ class TelegramNotifier:
             ai_provider = setup.get('ai_provider', 'claude').upper()
             ai_emoji = '🤖' if ai_provider == 'CLAUDE' else '⚡'
             
+            # Get market strength
+            strength_data = setup.get('market_strength', {})
+            strength_score = strength_data.get('strength_score', 50)
+            strength_level = strength_data.get('strength_level', 'Neutral')
+            
+            # Strength emoji
+            if strength_score >= 80:
+                strength_emoji = '🟢🟢🟢'
+            elif strength_score >= 65:
+                strength_emoji = '🟢🟢'
+            elif strength_score >= 45:
+                strength_emoji = '⚪'
+            elif strength_score >= 30:
+                strength_emoji = '🔴'
+            else:
+                strength_emoji = '🔴🔴'
+            
             message = f"""
 {direction_emoji} **TRADING SIGNAL** {direction_emoji}
 
@@ -58,6 +75,8 @@ class TelegramNotifier:
 **Timeframe:** {setup.get('timeframe', 'N/A')}
 **Direction:** {setup.get('direction', 'N/A')}
 **Confidence:** {setup.get('confidence', 0)}%
+
+💪 **Market Strength:** {strength_emoji} **{strength_score}/100** ({strength_level})
 
 💰 **Entry:** ${setup.get('entry', 0):.4f}
 🎯 **Take Profit:** ${setup.get('take_profit', 0):.4f}

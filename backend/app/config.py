@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     TOP_N_COINS: int = 15
     MIN_CONFIDENCE_SCORE: int = 60
     MAX_ALERTS_PER_SCAN: int = 3
+    AUTO_SCAN_AI_PROVIDER: str = "claude"  # 'claude' or 'groq' for auto-scans
     
     class Config:
         env_file = ".env"

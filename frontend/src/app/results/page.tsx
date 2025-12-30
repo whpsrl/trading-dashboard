@@ -84,37 +84,152 @@ export default function ResultsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem',
-          marginBottom: '2rem'
-        }}>
-          <StatCard
-            title="Total Setups"
-            value={stats.total_setups}
-            icon="🎯"
-            color="#667eea"
-          />
-          <StatCard
-            title="Win Rate"
-            value={`${stats.win_rate}%`}
-            icon="📈"
-            color="#10b981"
-          />
-          <StatCard
-            title="Learning Score"
-            value={stats.learning_score}
-            icon="🧠"
-            color="#f59e0b"
-          />
-          <StatCard
-            title="Tracked Trades"
-            value={stats.tracked_trades}
-            icon="📊"
-            color="#6366f1"
-          />
-        </div>
+        <>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '1rem',
+            marginBottom: '2rem'
+          }}>
+            <StatCard
+              title="Total Setups"
+              value={stats.total_setups}
+              icon="🎯"
+              color="#667eea"
+            />
+            <StatCard
+              title="Win Rate"
+              value={`${stats.win_rate}%`}
+              icon="📈"
+              color={stats.win_rate >= 60 ? "#10b981" : stats.win_rate >= 50 ? "#f59e0b" : "#ef4444"}
+            />
+            <StatCard
+              title="Avg Profit"
+              value={`+${stats.avg_profit}%`}
+              icon="💰"
+              color="#10b981"
+            />
+            <StatCard
+              title="Avg Loss"
+              value={`-${stats.avg_loss}%`}
+              icon="🛑"
+              color="#ef4444"
+            />
+            <StatCard
+              title="Learning Score"
+              value={stats.learning_score}
+              icon="🧠"
+              color="#f59e0b"
+            />
+            <StatCard
+              title="Tracked Trades"
+              value={stats.tracked_trades}
+              icon="📊"
+              color="#6366f1"
+            />
+          </div>
+
+          {/* Detailed Stats */}
+          {stats.tracked_trades > 0 && (
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '2rem',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+              marginBottom: '2rem'
+            }}>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                marginBottom: '1.5rem'
+              }}>
+                📈 Performance Metrics
+              </h2>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '1.5rem'
+              }}>
+                {/* Win/Loss Ratio */}
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem', color: '#6b7280' }}>
+                    Win/Loss Distribution
+                  </h3>
+                  <div style={{
+                    background: '#f9fafb',
+                    padding: '1rem',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#10b981', fontWeight: '600' }}>Wins</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 'bold' }}>{stats.win_rate}%</span>
+                      </div>
+                      <div style={{
+                        height: '8px',
+                        background: '#e5e7eb',
+                        borderRadius: '4px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${stats.win_rate}%`,
+                          background: '#10b981',
+                          transition: 'width 0.3s'
+                        }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: '600' }}>Losses</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 'bold' }}>{100 - stats.win_rate}%</span>
+                      </div>
+                      <div style={{
+                        height: '8px',
+                        background: '#e5e7eb',
+                        borderRadius: '4px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${100 - stats.win_rate}%`,
+                          background: '#ef4444',
+                          transition: 'width 0.3s'
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Risk/Reward */}
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem', color: '#6b7280' }}>
+                    Risk/Reward Ratio
+                  </h3>
+                  <div style={{
+                    background: '#f9fafb',
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{
+                      fontSize: '2.5rem',
+                      fontWeight: 'bold',
+                      color: stats.avg_profit / stats.avg_loss >= 2 ? '#10b981' : '#f59e0b',
+                      marginBottom: '0.5rem'
+                    }}>
+                      {stats.avg_loss > 0 ? (stats.avg_profit / stats.avg_loss).toFixed(2) : 'N/A'}:1
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                      {stats.avg_profit / stats.avg_loss >= 2 ? '✅ Excellent' : stats.avg_profit / stats.avg_loss >= 1.5 ? '⚠️ Good' : '❌ Needs improvement'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Recent Scans */}

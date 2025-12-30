@@ -20,22 +20,29 @@ class AutoScanner:
         self.scheduler = AsyncIOScheduler()
         logger.info("✅ Auto-scanner initialized")
     
-    async def run_hourly_scan(self):
-        """Execute hourly scan"""
+    async def run_4h_scan(self):
+        """Execute 4h scan (synchronized with candle close)"""
         try:
-            logger.info("🕐 Starting automatic hourly scan...")
+            logger.info("🕐 Starting automatic 4H scan (candle close)...")
             
             # Create scan session
             scan_id = self.trade_tracker.create_scan_session(
-                scan_type='auto_hourly',
+                scan_type='auto_4h',
                 top_n=15,
-                timeframes=['15m', '1h', '4h']
+                timeframes=['4h']
             )
             
-            # Scan market
+            # Scan market - ONLY 4H timeframe
+            # Use configured AI provider for auto-scans
+            from ..config import settings
+            ai_provider = settings.AUTO_SCAN_AI_PROVIDER
+            
+            logger.info(f"   Using AI: {ai_provider.upper()}")
+            
             setups = await self.scanner.scan_market(
-                timeframes=['15m', '1h', '4h'],
-                max_results=50
+                timeframes=['4h'],
+                max_results=50,
+                ai_provider=ai_provider
             )
             
             logger.info(f"✅ Auto scan complete - found {len(setups) if setups else 0} setups")
@@ -73,17 +80,17 @@ class AutoScanner:
     def start(self):
         """Start the scheduler"""
         try:
-            # Run every hour at :00
+            # Run every 4 hours at candle close: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC
             self.scheduler.add_job(
-                self.run_hourly_scan,
-                CronTrigger(minute=0),  # Every hour at :00
-                id='hourly_scan',
-                name='Hourly Market Scan',
+                self.run_4h_scan,
+                CronTrigger(hour='0,4,8,12,16,20', minute=0),
+                id='scan_4h',
+                name='4H Market Scan (Candle Close)',
                 replace_existing=True
             )
             
             self.scheduler.start()
-            logger.info("✅ Auto-scan scheduler started (runs every hour)")
+            logger.info("✅ Auto-scan scheduler started (runs every 4h at candle close: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)")
             
         except Exception as e:
             logger.error(f"❌ Scheduler start error: {e}")

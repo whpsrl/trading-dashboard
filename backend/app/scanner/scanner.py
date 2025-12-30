@@ -5,7 +5,7 @@ Main scanning logic - coordinates data fetching and AI analysis
 import logging
 import asyncio
 from typing import List, Dict
-from ..market_data import BinanceFetcher
+from ..market_data import BinanceFetcher, strength_calculator
 from ..ai import ClaudeAnalyzer, GroqAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -95,10 +95,37 @@ class TradingScanner:
                     if not analysis:
                         continue
                     
+                    # Calculate Market Strength
+                    try:
+                        # Get 24h data from first candle stats
+                        volume_24h = sum([c[5] for c in ohlcv[-24:]]) if len(ohlcv) >= 24 else ohlcv[-1][5]
+                        price_24h_ago = ohlcv[-24][4] if len(ohlcv) >= 24 else ohlcv[0][4]
+                        price_change_24h = ((analysis['current_price'] - price_24h_ago) / price_24h_ago) * 100
+                        
+                        strength_data = strength_calculator.calculate_strength(
+                            symbol=pair,
+                            current_price=analysis['current_price'],
+                            volume_24h=volume_24h,
+                            price_change_24h=price_change_24h,
+                            ohlcv_data=ohlcv,
+                            market_ranking=pairs.index(pair) + 1 if pair in pairs else None
+                        )
+                        
+                        # Add strength to analysis
+                        analysis['market_strength'] = strength_data
+                        
+                    except Exception as e:
+                        logger.warning(f"⚠️  Could not calculate strength for {pair}: {e}")
+                        analysis['market_strength'] = {
+                            'strength_score': 50,
+                            'strength_level': 'Neutral'
+                        }
+                    
                     # Filter by confidence
                     if analysis.get('valid') and analysis.get('confidence', 0) >= self.min_confidence:
                         all_setups.append(analysis)
-                        logger.info(f"✅ {pair} {tf}: Confidence {analysis['confidence']}% - {analysis['direction']}")
+                        strength_emoji = '🟢' if strength_data['strength_score'] >= 65 else '⚪' if strength_data['strength_score'] >= 45 else '🔴'
+                        logger.info(f"✅ {pair} {tf}: Conf {analysis['confidence']}% | Strength {strength_emoji} {strength_data['strength_score']}/100 - {analysis['direction']}")
                     
                     # Small delay to avoid rate limits
                     await asyncio.sleep(0.5)

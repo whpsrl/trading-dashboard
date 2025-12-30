@@ -7,7 +7,8 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://trading-dash
 export default function DiagnosticsPage() {
   const [health, setHealth] = useState<any>(null)
   const [stats, setStats] = useState<any>(null)
-  const [testBTC, setTestBTC] = useState<any>(null)
+  const [testClaude, setTestClaude] = useState<any>(null)
+  const [testGroq, setTestGroq] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -35,13 +36,22 @@ export default function DiagnosticsPage() {
       setStats({ error: 'Failed to load stats' })
     }
 
-    // BTC test
+    // Claude test
     try {
-      const res = await fetch(`${BACKEND_URL}/api/scan/test`)
+      const res = await fetch(`${BACKEND_URL}/api/scan/test?ai_provider=claude`)
       const data = await res.json()
-      setTestBTC(data)
+      setTestClaude(data)
     } catch (error) {
-      setTestBTC({ error: 'Failed to test BTC analysis' })
+      setTestClaude({ error: 'Failed to test Claude' })
+    }
+
+    // Groq test
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/scan/test?ai_provider=groq`)
+      const data = await res.json()
+      setTestGroq(data)
+    } catch (error) {
+      setTestGroq({ error: 'Failed to test Groq' })
     }
 
     setLoading(false)
@@ -148,11 +158,17 @@ export default function DiagnosticsPage() {
         data={stats?.stats || stats}
       />
 
-      {/* BTC Test */}
+      {/* AI Tests */}
       <CheckSection
-        title="🧪 AI Analysis Test (BTC/USDT)"
-        status={testBTC?.success ? 'success' : 'error'}
-        data={testBTC?.analysis || testBTC}
+        title="🧪 Claude AI Test (BTC/USDT 1h)"
+        status={testClaude?.success ? 'success' : 'error'}
+        data={testClaude?.analysis || testClaude}
+      />
+
+      <CheckSection
+        title="⚡ Groq AI Test (BTC/USDT 1h)"
+        status={testGroq?.success ? 'success' : 'error'}
+        data={testGroq?.analysis || testGroq}
       />
 
       {/* Backend URL */}

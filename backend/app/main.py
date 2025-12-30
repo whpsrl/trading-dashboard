@@ -13,6 +13,7 @@ from .telegram import TelegramNotifier
 from .database import init_db
 from .database.tracker import trade_tracker
 from .scheduler import AutoScanner
+from .trade_tracking import TradeTrackerWorker
 
 # Load environment variables
 load_dotenv()
@@ -28,12 +29,13 @@ logger = logging.getLogger(__name__)
 scanner: TradingScanner = None
 telegram: TelegramNotifier = None
 auto_scanner: AutoScanner = None
+tracker_worker: TradeTrackerWorker = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
-    global scanner, telegram, auto_scanner
+    global scanner, telegram, auto_scanner, tracker_worker
     
     logger.info("🚀 Starting Trading Bot...")
     
@@ -56,17 +58,25 @@ async def lifespan(app: FastAPI):
         chat_id=settings.TELEGRAM_CHAT_ID
     )
     
-    # Initialize auto-scanner
+    # Initialize auto-scanner (4h scans)
     auto_scanner = AutoScanner(scanner, telegram, trade_tracker)
     auto_scanner.start()
     
-    logger.info("✅ All services initialized (including hourly auto-scan)")
+    # Initialize trade tracker worker (checks TP/SL every 15min)
+    tracker_worker = TradeTrackerWorker(scanner.fetcher)
+    asyncio.create_task(tracker_worker.start())
+    
+    logger.info("✅ All services initialized:")
+    logger.info("   📊 4H Auto-scan: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC")
+    logger.info("   🔄 Trade Tracker: checks TP/SL every 15 minutes")
     
     yield
     
     logger.info("👋 Shutting down...")
     if auto_scanner:
         auto_scanner.stop()
+    if tracker_worker:
+        tracker_worker.stop()
 
 
 # Create FastAPI app
@@ -198,15 +208,18 @@ async def send_telegram_alerts(setups):
 
 
 @app.get("/api/scan/test")
-async def test_scan_one_symbol():
+async def test_scan_one_symbol(ai_provider: str = 'claude'):
     """
-    Quick test - analyze only BTC/USDT
+    Quick test - analyze only BTC/USDT with specified AI
+    
+    Args:
+        ai_provider: 'claude' or 'groq'
     """
     if not scanner:
         return {"error": "Scanner not initialized"}
     
     try:
-        logger.info("🔍 Test scan: BTC/USDT only")
+        logger.info(f"🔍 Test scan: BTC/USDT with {ai_provider.upper()}")
         
         # Fetch BTC data
         logger.info("📊 Fetching BTC/USDT data...")
@@ -217,14 +230,24 @@ async def test_scan_one_symbol():
         
         logger.info(f"✅ Fetched {len(ohlcv)} candles")
         
+        # Select AI
+        if ai_provider == 'groq':
+            if not scanner.groq.is_available():
+                return {"error": "Groq not available", "ai_available": False}
+            ai_to_use = scanner.groq
+        else:
+            if not scanner.claude.is_available():
+                return {"error": "Claude not available", "ai_available": False}
+            ai_to_use = scanner.claude
+        
         # AI analysis
-        logger.info("🤖 Calling Claude AI...")
-        analysis = await scanner.ai.analyze_setup("BTC/USDT", ohlcv, "1h")
+        logger.info(f"🤖 Calling {ai_provider.upper()} AI...")
+        analysis = await ai_to_use.analyze_setup("BTC/USDT", ohlcv, "1h")
         
         if not analysis:
             return {
-                "error": "AI analysis returned None",
-                "ai_available": scanner.ai.is_available(),
+                "error": f"{ai_provider.upper()} analysis returned None",
+                "ai_available": ai_to_use.is_available(),
                 "step": "ai_analysis"
             }
         
@@ -233,6 +256,7 @@ async def test_scan_one_symbol():
         return {
             "success": True,
             "symbol": "BTC/USDT",
+            "ai_provider": ai_provider,
             "analysis": analysis
         }
         
@@ -243,7 +267,8 @@ async def test_scan_one_symbol():
         logger.error(error_trace)
         return {
             "error": str(e),
-            "traceback": error_trace
+            "traceback": error_trace,
+            "ai_provider": ai_provider
         }
 
 

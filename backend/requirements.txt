@@ -20,5 +20,6 @@ python-telegram-bot==21.0
 # Scheduler (for auto-scan)
 apscheduler==3.10.4
 
-# Utilities (no plotly/kaleido needed without vision)
+# Utilities
+numpy>=1.24.0
 
