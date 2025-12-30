@@ -15,15 +15,26 @@ export default function CryptoPage() {
     setResults(null)
 
     try {
+      console.log('🚀 Calling:', `${BACKEND_URL}/api/scan`)
+      
       const response = await fetch(`${BACKEND_URL}/api/scan`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
 
+      console.log('📡 Response status:', response.status)
+      console.log('📡 Response ok:', response.ok)
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+        const errorText = await response.text()
+        console.error('❌ Error response:', errorText)
+        throw new Error(`HTTP ${response.status}: ${errorText}`)
       }
 
       const data = await response.json()
+      console.log('✅ Response data:', data)
 
       if (data.status === 'started') {
         setMessage('✅ Scan started! Check Telegram for results in 2-3 minutes.')
@@ -35,8 +46,8 @@ export default function CryptoPage() {
 
       setResults(data)
     } catch (error) {
+      console.error('❌ Full error:', error)
       setMessage('❌ Failed to scan market: ' + (error as Error).message)
-      console.error('Scan error:', error)
     } finally {
       setScanning(false)
     }
