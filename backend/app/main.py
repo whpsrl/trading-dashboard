@@ -64,7 +64,11 @@ async def lifespan(app: FastAPI):
     auto_scanner.start()
     
     # Initialize trade tracker worker (checks TP/SL every 15min)
-    tracker_worker = TradeTrackerWorker(scanner.fetcher)
+    tracker_worker = TradeTrackerWorker(
+        binance_fetcher=scanner.fetcher,
+        telegram_notifier=telegram,
+        trade_tracker=trade_tracker
+    )
     asyncio.create_task(tracker_worker.start())
     
     logger.info("✅ All services initialized:")

@@ -17,8 +17,10 @@ logger = logging.getLogger(__name__)
 class TradeTrackerWorker:
     """Worker that monitors open trades and updates outcomes"""
     
-    def __init__(self, binance_fetcher: BinanceFetcher):
+    def __init__(self, binance_fetcher: BinanceFetcher, telegram_notifier=None, trade_tracker=None):
         self.fetcher = binance_fetcher
+        self.telegram = telegram_notifier
+        self.trade_tracker = trade_tracker
         self.running = False
         logger.info("✅ Trade Tracker Worker initialized")
     
@@ -77,6 +79,32 @@ class TradeTrackerWorker:
                         updated += 1
                         
                         logger.info(f"{'✅' if outcome['status'] == 'hit_tp' else '❌'} {trade.symbol} {trade.timeframe}: {outcome['status']} | P/L: {outcome['profit_loss_pct']:.2f}%")
+                        
+                        # Send Telegram notification
+                        if self.telegram and self.telegram.is_available() and self.trade_tracker:
+                            try:
+                                # Get updated stats
+                                stats = self.trade_tracker.get_stats()
+                                
+                                # Prepare trade data for notification
+                                trade_data = {
+                                    'symbol': trade.symbol,
+                                    'timeframe': trade.timeframe,
+                                    'direction': trade.direction,
+                                    'entry_price': trade.entry_price,
+                                    'exit_price': trade.exit_price,
+                                    'current_price': trade.current_price,
+                                    'status': trade.status,
+                                    'profit_loss_pct': trade.profit_loss_pct,
+                                    'created_at': trade.created_at.isoformat() if trade.created_at else None,
+                                    'closed_at': trade.closed_at.isoformat() if trade.closed_at else None
+                                }
+                                
+                                # Send notification
+                                await self.telegram.send_trade_close_alert(trade_data, stats)
+                                
+                            except Exception as e:
+                                logger.error(f"❌ Error sending Telegram notification: {e}")
                     
                     checked += 1
                     
