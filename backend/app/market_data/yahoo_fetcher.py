@@ -27,11 +27,16 @@ class YahooFetcher:
         'USDJPY': {'symbol': 'USDJPY=X', 'name': 'USD/JPY', 'emoji': '💱'},
     }
     
-    # Indices
+    # Indices - Top 8 Global
     INDICES = {
-        'SPX': {'symbol': '^GSPC', 'name': 'S&P 500', 'emoji': '📈'},
-        'NDX': {'symbol': '^IXIC', 'name': 'NASDAQ', 'emoji': '📈'},
-        'DJI': {'symbol': '^DJI', 'name': 'Dow Jones', 'emoji': '📈'},
+        'SPX': {'symbol': '^GSPC', 'name': 'S&P 500', 'emoji': '🇺🇸'},
+        'DJI': {'symbol': '^DJI', 'name': 'Dow Jones', 'emoji': '🇺🇸'},
+        'NDX': {'symbol': '^IXIC', 'name': 'NASDAQ', 'emoji': '🇺🇸'},
+        'DAX': {'symbol': '^GDAXI', 'name': 'DAX 40', 'emoji': '🇩🇪'},
+        'FTSE': {'symbol': '^FTSE', 'name': 'FTSE 100', 'emoji': '🇬🇧'},
+        'MIB': {'symbol': 'FTSEMIB.MI', 'name': 'FTSE MIB', 'emoji': '🇮🇹'},
+        'N225': {'symbol': '^N225', 'name': 'Nikkei 225', 'emoji': '🇯🇵'},
+        'HSI': {'symbol': '^HSI', 'name': 'Hang Seng', 'emoji': '🇭🇰'},
     }
     
     # Timeframe mapping (Yahoo format)

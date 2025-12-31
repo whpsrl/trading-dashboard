@@ -15,8 +15,9 @@ from .database import init_db
 from .database.tracker import trade_tracker
 from .scheduler import AutoScanner
 from .scheduler.auto_scan_commodities import AutoScannerCommodities
+from .scheduler.auto_scan_indices import AutoScannerIndices
 from .trade_tracking import TradeTrackerWorker
-from .routes import commodities
+from .routes import commodities, indices
 
 # Load environment variables
 load_dotenv()
@@ -33,13 +34,14 @@ scanner: TradingScanner = None
 telegram: TelegramNotifier = None
 auto_scanner: AutoScanner = None
 auto_scanner_commodities: AutoScannerCommodities = None
+auto_scanner_indices: AutoScannerIndices = None
 tracker_worker: TradeTrackerWorker = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
-    global scanner, telegram, auto_scanner, auto_scanner_commodities, tracker_worker
+    global scanner, telegram, auto_scanner, auto_scanner_commodities, auto_scanner_indices, tracker_worker
     
     logger.info("🚀 Starting Trading Bot...")
     
@@ -70,6 +72,10 @@ async def lifespan(app: FastAPI):
     auto_scanner_commodities = AutoScannerCommodities(telegram, trade_tracker)
     auto_scanner_commodities.start()
     
+    # Initialize auto-scanner INDICES (4h scans - Yahoo data with 1h delay)
+    auto_scanner_indices = AutoScannerIndices(telegram, trade_tracker)
+    auto_scanner_indices.start()
+    
     # Initialize trade tracker worker (checks TP/SL every 15min)
     tracker_worker = TradeTrackerWorker(
         binance_fetcher=scanner.fetcher,
@@ -81,6 +87,7 @@ async def lifespan(app: FastAPI):
     logger.info("✅ All services initialized:")
     logger.info("   📊 CRYPTO 4H Auto-scan: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC")
     logger.info("   🥇 COMMODITIES 4H Auto-scan: 00:30, 04:30, 08:30, 12:30, 16:30, 20:30 UTC (+30min delay)")
+    logger.info("   📈 INDICES 4H Auto-scan: 01:00, 05:00, 09:00, 13:00, 17:00, 21:00 UTC (+1h delay)")
     logger.info("   🔄 Trade Tracker: checks TP/SL every 15 minutes")
     
     yield
@@ -90,6 +97,8 @@ async def lifespan(app: FastAPI):
         auto_scanner.stop()
     if auto_scanner_commodities:
         auto_scanner_commodities.stop()
+    if auto_scanner_indices:
+        auto_scanner_indices.stop()
     if tracker_worker:
         tracker_worker.stop()
 
@@ -113,6 +122,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(commodities.router, prefix="/api/commodities", tags=["commodities"])
+app.include_router(indices.router, prefix="/api/indices", tags=["indices"])
 
 
 @app.get("/")
