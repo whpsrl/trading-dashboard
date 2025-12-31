@@ -1,7 +1,7 @@
 """
 API Routes
 """
-from . import commodities, indices
+from . import commodities, indices, news
 
-__all__ = ['commodities', 'indices']
+__all__ = ['commodities', 'indices', 'news']
 

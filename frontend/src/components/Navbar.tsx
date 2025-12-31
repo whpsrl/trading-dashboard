@@ -12,6 +12,7 @@ export default function Navbar() {
     { href: '/commodities', label: 'Commodities' },
     { href: '/indices', label: 'Indices' },
     { href: '/trades', label: 'Trades' },
+    { href: '/news', label: 'News' },
     { href: '/results', label: 'Results' },
     { href: '/diagnostics', label: 'Diagnostics' },
     { href: '/stocks', label: 'Stocks' },

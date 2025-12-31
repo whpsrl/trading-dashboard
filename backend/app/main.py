@@ -16,8 +16,9 @@ from .database.tracker import trade_tracker
 from .scheduler import AutoScanner
 from .scheduler.auto_scan_commodities import AutoScannerCommodities
 from .scheduler.auto_scan_indices import AutoScannerIndices
+from .scheduler.auto_news import AutoNewsScheduler
 from .trade_tracking import TradeTrackerWorker
-from .routes import commodities, indices
+from .routes import commodities, indices, news
 
 # Load environment variables
 load_dotenv()
@@ -35,13 +36,14 @@ telegram: TelegramNotifier = None
 auto_scanner: AutoScanner = None
 auto_scanner_commodities: AutoScannerCommodities = None
 auto_scanner_indices: AutoScannerIndices = None
+auto_news_scheduler: AutoNewsScheduler = None
 tracker_worker: TradeTrackerWorker = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
-    global scanner, telegram, auto_scanner, auto_scanner_commodities, auto_scanner_indices, tracker_worker
+    global scanner, telegram, auto_scanner, auto_scanner_commodities, auto_scanner_indices, auto_news_scheduler, tracker_worker
     
     logger.info("🚀 Starting Trading Bot...")
     
@@ -76,6 +78,10 @@ async def lifespan(app: FastAPI):
     auto_scanner_indices = AutoScannerIndices(telegram, trade_tracker)
     auto_scanner_indices.start()
     
+    # Initialize auto news scheduler (3x per day)
+    auto_news_scheduler = AutoNewsScheduler(telegram)
+    auto_news_scheduler.start()
+    
     # Initialize trade tracker worker (checks TP/SL every 15min)
     tracker_worker = TradeTrackerWorker(
         binance_fetcher=scanner.fetcher,
@@ -88,6 +94,7 @@ async def lifespan(app: FastAPI):
     logger.info("   📊 CRYPTO 4H Auto-scan: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC")
     logger.info("   🥇 COMMODITIES 4H Auto-scan: 00:30, 04:30, 08:30, 12:30, 16:30, 20:30 UTC (+30min delay)")
     logger.info("   📈 INDICES 4H Auto-scan: 01:00, 05:00, 09:00, 13:00, 17:00, 21:00 UTC (+1h delay)")
+    logger.info("   📰 NEWS Articles: 08:00, 14:00, 18:00 UTC (09:00, 15:00, 19:00 Rome)")
     logger.info("   🔄 Trade Tracker: checks TP/SL every 15 minutes")
     
     yield
@@ -99,6 +106,8 @@ async def lifespan(app: FastAPI):
         auto_scanner_commodities.stop()
     if auto_scanner_indices:
         auto_scanner_indices.stop()
+    if auto_news_scheduler:
+        auto_news_scheduler.stop()
     if tracker_worker:
         tracker_worker.stop()
 
@@ -123,6 +132,7 @@ app.add_middleware(
 # Include routers
 app.include_router(commodities.router, prefix="/api/commodities", tags=["commodities"])
 app.include_router(indices.router, prefix="/api/indices", tags=["indices"])
+app.include_router(news.router, prefix="/api/news", tags=["news"])
 
 
 @app.get("/")
@@ -144,6 +154,31 @@ async def health():
         "telegram_available": telegram.is_available() if telegram else False,
         "ai_claude_available": scanner.claude.is_available() if scanner else False,
         "ai_groq_available": scanner.groq.is_available() if scanner else False
+    }
+
+
+@app.post("/api/telegram/set-topic")
+async def set_telegram_topic(topic_name: str, thread_id: int):
+    """Set a Telegram topic thread ID"""
+    if not telegram:
+        return {"success": False, "error": "Telegram not initialized"}
+    
+    telegram.set_topic_id(topic_name, thread_id)
+    return {
+        "success": True,
+        "message": f"Topic '{topic_name}' set to thread ID {thread_id}"
+    }
+
+
+@app.get("/api/telegram/topics")
+async def get_telegram_topics():
+    """Get configured Telegram topics"""
+    if not telegram:
+        return {"success": False, "error": "Telegram not initialized"}
+    
+    return {
+        "success": True,
+        "topics": telegram.topics
     }
 
 

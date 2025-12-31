@@ -17,23 +17,53 @@ class TelegramNotifier:
             logger.error("❌ Telegram credentials missing!")
             self.bot = None
             self.chat_id = None
+            self.topics = {}
         else:
             try:
                 self.bot = Bot(token=bot_token)
                 self.chat_id = chat_id
-                logger.info("✅ Telegram notifier initialized")
+                
+                # Define Telegram Topics (Forum Thread IDs)
+                # These need to be configured after creating topics in your Telegram group
+                self.topics = {
+                    'crypto_signals': None,      # Will be set via config
+                    'commodities_signals': None,
+                    'indices_signals': None,
+                    'news_articles': None,
+                    'education': None,
+                    'general': None
+                }
+                
+                logger.info("✅ Telegram notifier initialized with Topics support")
             except Exception as e:
                 logger.error(f"❌ Telegram init error: {e}")
                 self.bot = None
                 self.chat_id = None
+                self.topics = {}
     
     def is_available(self) -> bool:
         """Check if Telegram is available"""
         return self.bot is not None and self.chat_id is not None
     
-    async def send_alert(self, setup: Dict) -> bool:
+    def set_topic_id(self, topic_name: str, thread_id: int):
+        """Set a topic thread ID"""
+        if topic_name in self.topics:
+            self.topics[topic_name] = thread_id
+            logger.info(f"✅ Set topic '{topic_name}' to thread ID: {thread_id}")
+        else:
+            logger.warning(f"⚠️ Unknown topic: {topic_name}")
+    
+    def get_topic_id(self, topic_name: str) -> int:
+        """Get a topic thread ID (returns None if not set)"""
+        return self.topics.get(topic_name)
+    
+    async def send_alert(self, setup: Dict, topic: str = 'crypto_signals') -> bool:
         """
         Send trading alert for a single setup
+        
+        Args:
+            setup: Trade setup dictionary
+            topic: Topic name ('crypto_signals', 'commodities_signals', 'indices_signals')
         """
         if not self.is_available():
             logger.warning("Telegram not available")
@@ -88,14 +118,18 @@ class TelegramNotifier:
 ⏰ _Signal generated automatically_
 """
             
-            # Send message
+            # Get topic thread ID
+            topic_id = self.get_topic_id(topic)
+            
+            # Send message (to topic if ID is set)
             await self.bot.send_message(
                 chat_id=self.chat_id,
                 text=message,
-                parse_mode='Markdown'
+                parse_mode='Markdown',
+                message_thread_id=topic_id  # None = general chat, int = specific topic
             )
             
-            logger.info(f"✅ Alert sent for {setup.get('symbol')}")
+            logger.info(f"✅ Alert sent for {setup.get('symbol')} to topic '{topic}'")
             return True
             
         except TelegramError as e:
@@ -241,4 +275,55 @@ class TelegramNotifier:
                 return f"{days:.1f}d"
         except:
             return "N/A"
+    
+    async def send_article(self, article: Dict, topic: str = 'news_articles') -> Dict:
+        """
+        Send news article to Telegram topic
+        
+        Args:
+            article: Article dictionary with content, sources, etc.
+            topic: Topic name (default: 'news_articles')
+        
+        Returns:
+            Dict with success status and message_id if sent
+        """
+        if not self.is_available():
+            logger.warning("Telegram not available")
+            return {'success': False, 'error': 'Telegram not available'}
+        
+        try:
+            content = article.get('content', '')
+            
+            # If content is too long, truncate and add "Read more" link
+            MAX_LENGTH = 4000  # Telegram limit is 4096
+            if len(content) > MAX_LENGTH:
+                content = content[:MAX_LENGTH] + "\n\n... [Read more on dashboard]"
+            
+            # Get topic thread ID
+            topic_id = self.get_topic_id(topic)
+            
+            # Send message
+            message = await self.bot.send_message(
+                chat_id=self.chat_id,
+                text=content,
+                parse_mode='HTML',  # Use HTML for better formatting
+                message_thread_id=topic_id,
+                disable_web_page_preview=False  # Show link previews
+            )
+            
+            logger.info(f"✅ Article sent to topic '{topic}' - Message ID: {message.message_id}")
+            
+            return {
+                'success': True,
+                'message_id': message.message_id,
+                'topic': topic,
+                'topic_id': topic_id
+            }
+            
+        except TelegramError as e:
+            logger.error(f"❌ Telegram send error: {e}")
+            return {'success': False, 'error': str(e)}
+        except Exception as e:
+            logger.error(f"❌ Unexpected error sending article: {e}")
+            return {'success': False, 'error': str(e)}
 

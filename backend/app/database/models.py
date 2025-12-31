@@ -100,3 +100,55 @@ class ScanResult(Base):
             'status': self.status
         }
 
+
+class NewsArticle(Base):
+    """AI-generated news articles"""
+    __tablename__ = 'news_articles'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Article content
+    title = Column(String, nullable=False)
+    content = Column(Text, nullable=False)  # Full article text
+    summary = Column(Text, nullable=True)  # TL;DR
+    
+    # Metadata
+    category = Column(String, nullable=False, index=True)  # crypto, finance, tech
+    language = Column(String, default='en')  # en, it
+    style = Column(String, default='professional')  # professional, casual, technical
+    word_count = Column(Integer, nullable=True)
+    
+    # AI generation
+    ai_provider = Column(String, nullable=False)  # claude, groq
+    sources = Column(JSON, nullable=True)  # List of source articles
+    
+    # Publishing
+    status = Column(String, default='draft')  # draft, published, archived
+    published_at = Column(DateTime, nullable=True)
+    telegram_message_id = Column(Integer, nullable=True)
+    telegram_topic_id = Column(Integer, nullable=True)
+    
+    # Timing
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'content': self.content,
+            'summary': self.summary,
+            'category': self.category,
+            'language': self.language,
+            'style': self.style,
+            'word_count': self.word_count,
+            'ai_provider': self.ai_provider,
+            'sources': self.sources,
+            'status': self.status,
+            'published_at': self.published_at.isoformat() if self.published_at else None,
+            'telegram_message_id': self.telegram_message_id,
+            'telegram_topic_id': self.telegram_topic_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
