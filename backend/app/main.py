@@ -14,7 +14,9 @@ from .telegram import TelegramNotifier
 from .database import init_db
 from .database.tracker import trade_tracker
 from .scheduler import AutoScanner
+from .scheduler.auto_scan_commodities import AutoScannerCommodities
 from .trade_tracking import TradeTrackerWorker
+from .routes import commodities
 
 # Load environment variables
 load_dotenv()
@@ -30,13 +32,14 @@ logger = logging.getLogger(__name__)
 scanner: TradingScanner = None
 telegram: TelegramNotifier = None
 auto_scanner: AutoScanner = None
+auto_scanner_commodities: AutoScannerCommodities = None
 tracker_worker: TradeTrackerWorker = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
-    global scanner, telegram, auto_scanner, tracker_worker
+    global scanner, telegram, auto_scanner, auto_scanner_commodities, tracker_worker
     
     logger.info("🚀 Starting Trading Bot...")
     
@@ -59,9 +62,13 @@ async def lifespan(app: FastAPI):
         chat_id=settings.TELEGRAM_CHAT_ID
     )
     
-    # Initialize auto-scanner (4h scans)
+    # Initialize auto-scanner CRYPTO (4h scans - real-time Binance data)
     auto_scanner = AutoScanner(scanner, telegram, trade_tracker)
     auto_scanner.start()
+    
+    # Initialize auto-scanner COMMODITIES (4h scans - Yahoo data with 30min delay)
+    auto_scanner_commodities = AutoScannerCommodities(telegram, trade_tracker)
+    auto_scanner_commodities.start()
     
     # Initialize trade tracker worker (checks TP/SL every 15min)
     tracker_worker = TradeTrackerWorker(
@@ -72,7 +79,8 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(tracker_worker.start())
     
     logger.info("✅ All services initialized:")
-    logger.info("   📊 4H Auto-scan: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC")
+    logger.info("   📊 CRYPTO 4H Auto-scan: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC")
+    logger.info("   🥇 COMMODITIES 4H Auto-scan: 00:30, 04:30, 08:30, 12:30, 16:30, 20:30 UTC (+30min delay)")
     logger.info("   🔄 Trade Tracker: checks TP/SL every 15 minutes")
     
     yield
@@ -80,6 +88,8 @@ async def lifespan(app: FastAPI):
     logger.info("👋 Shutting down...")
     if auto_scanner:
         auto_scanner.stop()
+    if auto_scanner_commodities:
+        auto_scanner_commodities.stop()
     if tracker_worker:
         tracker_worker.stop()
 
@@ -100,6 +110,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(commodities.router, prefix="/api/commodities", tags=["commodities"])
 
 
 @app.get("/")
