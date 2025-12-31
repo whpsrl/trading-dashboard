@@ -32,17 +32,21 @@ class ArticleGenerator:
     ) -> str:
         """Build prompt for AI article generation"""
         
-        # Combine article summaries
-        sources_text = "\n\n".join([
-            f"**{a.get('source', 'Unknown')}**: {a.get('title', '')}\n{a.get('summary', '')[:300]}"
-            for a in articles[:5]  # Use top 5 articles
-        ])
+        # Combine article summaries with more detail
+        sources_text = ""
+        for idx, article in enumerate(articles[:5], 1):  # Use top 5 articles
+            sources_text += f"\n\n=== FONTE {idx}: {article.get('source', 'Unknown')} ===\n"
+            sources_text += f"Titolo: {article.get('title', 'N/A')}\n"
+            if article.get('summary'):
+                sources_text += f"Contenuto: {article.get('summary', '')[:500]}\n"
+            if article.get('link'):
+                sources_text += f"Link: {article.get('link')}\n"
         
         style_guide = {
-            'professional': 'professional and informative',
-            'casual': 'casual and engaging',
-            'technical': 'technical and detailed',
-            'beginner': 'simple and easy to understand'
+            'professional': 'professionale e informativo, adatto a trader e investitori esperti',
+            'casual': 'casual e coinvolgente, accessibile a tutti',
+            'technical': 'tecnico e dettagliato, con analisi approfondite',
+            'beginner': 'semplice e comprensibile, ideale per principianti'
         }
         
         language_map = {
@@ -51,21 +55,62 @@ class ArticleGenerator:
             'es': 'Spanish'
         }
         
-        prompt = f"""You are a financial news writer. Create a compelling article based on these news sources:
+        language_instructions = {
+            'en': '',
+            'it': '\n- Usa italiano professionale e corretto\n- Termini tecnici in inglese solo se necessari (con spiegazione)',
+            'es': '\n- Usa español profesional y correcto'
+        }
+        
+        prompt = f"""Sei un giornalista esperto di finanza e trading. Ho raccolto informazioni da {len(articles)} fonti autorevoli.
 
+CONTENUTI DALLE FONTI:
 {sources_text}
 
-Requirements:
-- Style: {style_guide.get(style, 'professional')}
-- Language: {language_map.get(language, 'English')}
-- Length: {max_length} words maximum
-- Include key facts and numbers
-- Add relevant emojis (but not too many)
-- Structure: Headline, Summary (TL;DR), Main Content, Key Takeaways
-- Cite sources at the end
-- Format for Telegram (HTML or Markdown)
+Il tuo compito è creare un articolo ORIGINALE che:
 
-Write the article now:"""
+1. **Analizza e sintetizza** le informazioni dalle fonti
+2. **Identifica tendenze e novità** rilevanti
+3. **Crea contenuto completamente originale** (NO copia-incolla)
+4. **Fornisce valore pratico** per trader e investitori
+5. **Usa un tono {style_guide.get(style, 'professional')}**
+
+REQUISITI TECNICI:
+- **Lingua**: {language_map.get(language, 'English')}{language_instructions.get(language, '')}
+- **Lunghezza**: circa {max_length} parole
+- **Formato**: HTML con tag <p>, <h2>, <h3>, <strong>, <em>, <ul>, <li>
+- **Struttura**:
+  - Titolo accattivante (H1 implicito)
+  - Introduzione breve (2-3 frasi)
+  - Corpo principale con sottosezioni (H2/H3)
+  - Punti chiave/takeaway
+  - Conclusione pratica
+
+LINEE GUIDA CONTENUTO:
+- Focus su **dati concreti e trend attuali**
+- Cita numeri, percentuali, eventi specifici
+- Evita generalizzazioni vaghe
+- Linguaggio chiaro e preciso
+- Rilevanza per il target (trader/investitori)
+
+RISPOSTA RICHIESTA (JSON):
+{{
+  "title": "Titolo SEO-friendly (max 60 caratteri)",
+  "meta_title": "Meta title per SEO (max 60 caratteri)",
+  "meta_description": "Meta description (max 155 caratteri)",
+  "meta_keywords": "keyword1, keyword2, keyword3, keyword4, keyword5",
+  "excerpt": "Introduzione/summary 2-3 frasi",
+  "content": "<p>Contenuto HTML completo...</p>",
+  "read_time": {max(3, max_length // 200)},
+  "key_points": ["punto chiave 1", "punto chiave 2", "punto chiave 3"]
+}}
+
+IMPORTANTE:
+- Rispond SOLO con il JSON valido, nient'altro
+- NO testo prima o dopo il JSON
+- Usa virgolette doppie per JSON
+- Escape caratteri speciali in HTML
+
+Genera l'articolo ora:"""
         
         return prompt
     
