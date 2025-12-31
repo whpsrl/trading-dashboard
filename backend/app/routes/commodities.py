@@ -12,10 +12,11 @@ router = APIRouter()
 
 @router.post("/scan")
 async def scan_commodities(
-    ai_provider: str = Query("claude", pattern="^(claude|groq)$")
+    ai_provider: str = Query("claude", pattern="^(claude|groq)$"),
+    timeframe: str = Query("4h", pattern="^(15m|1h|4h)$")
 ):
     """
-    Scan top 3 commodities (Gold, Oil, Silver) on 4H timeframe
+    Scan top 3 commodities (Gold, Oil, Silver) on selected timeframe (15m, 1h, 4h)
     """
     try:
         from ..market_data.yahoo_fetcher import YahooFetcher
@@ -23,7 +24,7 @@ async def scan_commodities(
         from ..config import settings
         from ..database.tracker import TradeTracker
         
-        logger.info(f"🥇 Starting commodities scan with {ai_provider.upper()} AI...")
+        logger.info(f"🥇 Starting commodities scan on {timeframe.upper()} with {ai_provider.upper()} AI...")
         
         # Initialize fetcher
         yahoo_fetcher = YahooFetcher()
@@ -52,7 +53,7 @@ async def scan_commodities(
         scan_id = trade_tracker.create_scan_session(
             scan_type='manual_commodities',
             top_n=3,
-            timeframes=['4h'],
+            timeframes=[timeframe],
             ai_provider=ai_provider
         )
         
@@ -64,10 +65,10 @@ async def scan_commodities(
                 symbol_info = yahoo_fetcher.get_symbol_info(symbol)
                 display_name = symbol_info['name'] if symbol_info else symbol
                 
-                logger.info(f"   Analyzing {display_name} ({symbol})...")
+                logger.info(f"   Analyzing {display_name} ({symbol}) on {timeframe.upper()}...")
                 
                 # Fetch OHLCV data
-                ohlcv = await yahoo_fetcher.fetch_ohlcv(symbol, '4h', limit=100)
+                ohlcv = await yahoo_fetcher.fetch_ohlcv(symbol, timeframe, limit=100)
                 
                 if not ohlcv or len(ohlcv) < 50:
                     logger.warning(f"⚠️ Insufficient data for {symbol}")
@@ -75,9 +76,9 @@ async def scan_commodities(
                 
                 # Get AI analysis
                 if ai_provider == 'claude':
-                    analysis = await scanner.claude_ai.analyze_setup(display_name, ohlcv, '4h')
+                    analysis = await scanner.claude.analyze_setup(display_name, ohlcv, timeframe)
                 else:
-                    analysis = await scanner.groq_ai.analyze_setup(display_name, ohlcv, '4h')
+                    analysis = await scanner.groq.analyze_setup(display_name, ohlcv, timeframe)
                 
                 if not analysis or analysis.get('confidence', 0) < settings.MIN_CONFIDENCE_SCORE:
                     logger.info(f"   {display_name}: Low confidence, skipping")
@@ -97,7 +98,7 @@ async def scan_commodities(
                 setup = {
                     'symbol': display_name,
                     'yahoo_symbol': symbol,
-                    'timeframe': '4h',
+                    'timeframe': timeframe,
                     'direction': analysis.get('direction', 'NEUTRAL'),
                     'confidence': analysis.get('confidence', 0),
                     'entry': analysis.get('entry', current_price),
