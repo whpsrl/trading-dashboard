@@ -85,6 +85,33 @@ async def test_feeds():
         }
 
 
+@router.get("/test-single-feed")
+async def test_single_feed():
+    """Test ONE feed with maximum detail"""
+    try:
+        logger.info("🧪 Testing single crypto feed (CoinDesk)...")
+        
+        # Use the news_scraper directly
+        articles = await news_scraper.fetch_feed('https://www.coindesk.com/arc/outboundfeeds/rss/')
+        
+        return {
+            "success": True,
+            "feed_url": "https://www.coindesk.com/arc/outboundfeeds/rss/",
+            "articles_count": len(articles),
+            "articles": articles[:3] if articles else [],  # First 3
+            "message": f"Found {len(articles)} articles" if articles else "No articles found"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Single feed test error: {e}")
+        import traceback
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 @router.get("/test-ai")
 async def test_ai_generation():
     """Test AI article generation without RSS (diagnostic)"""

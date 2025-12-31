@@ -18,7 +18,7 @@ from .scheduler.auto_scan_commodities import AutoScannerCommodities
 from .scheduler.auto_scan_indices import AutoScannerIndices
 from .scheduler.auto_news import AutoNewsScheduler
 from .trade_tracking import TradeTrackerWorker
-from .routes import commodities, indices, news
+from .routes import commodities, indices, news, stocks
 
 # Load environment variables
 load_dotenv()
@@ -133,6 +133,7 @@ app.add_middleware(
 app.include_router(commodities.router, prefix="/api/commodities", tags=["commodities"])
 app.include_router(indices.router, prefix="/api/indices", tags=["indices"])
 app.include_router(news.router, prefix="/api/news", tags=["news"])
+app.include_router(stocks.router, prefix="/api/stocks", tags=["stocks"])
 
 
 @app.get("/")
