@@ -20,11 +20,13 @@ STOCKS_DATABASE = {
             {'symbol': 'GOOGL', 'name': 'Alphabet (Google)'},
             {'symbol': 'AMZN', 'name': 'Amazon'},
             {'symbol': 'META', 'name': 'Meta (Facebook)'},
-            {'symbol': 'NVDA', 'name': 'NVIDIA'},
             {'symbol': 'TSLA', 'name': 'Tesla'},
             {'symbol': 'NFLX', 'name': 'Netflix'},
-            {'symbol': 'AMD', 'name': 'AMD'},
-            {'symbol': 'INTC', 'name': 'Intel'},
+            {'symbol': 'CRM', 'name': 'Salesforce'},
+            {'symbol': 'ORCL', 'name': 'Oracle'},
+            {'symbol': 'ADBE', 'name': 'Adobe'},
+            {'symbol': 'CSCO', 'name': 'Cisco'},
+            {'symbol': 'IBM', 'name': 'IBM'},
         ]
     },
     'usa_finance': {
@@ -50,24 +52,61 @@ STOCKS_DATABASE = {
             {'symbol': 'MCD', 'name': "McDonald's"},
             {'symbol': 'DIS', 'name': 'Disney'},
             {'symbol': 'COST', 'name': 'Costco'},
+            {'symbol': 'TGT', 'name': 'Target'},
+            {'symbol': 'LOW', 'name': "Lowe's"},
+            {'symbol': 'KO', 'name': 'Coca-Cola'},
+            {'symbol': 'PEP', 'name': 'PepsiCo'},
         ]
     },
     'usa_healthcare': {
-        'name': '🇺🇸 Healthcare',
+        'name': '🇺🇸 Healthcare & Pharma',
         'stocks': [
             {'symbol': 'JNJ', 'name': 'Johnson & Johnson'},
             {'symbol': 'UNH', 'name': 'UnitedHealth'},
             {'symbol': 'PFE', 'name': 'Pfizer'},
             {'symbol': 'ABBV', 'name': 'AbbVie'},
             {'symbol': 'LLY', 'name': 'Eli Lilly'},
+            {'symbol': 'MRNA', 'name': 'Moderna'},
+            {'symbol': 'TMO', 'name': 'Thermo Fisher'},
+            {'symbol': 'BMY', 'name': 'Bristol Myers Squibb'},
+            {'symbol': 'GILD', 'name': 'Gilead Sciences'},
         ]
     },
     'usa_energy': {
-        'name': '🇺🇸 Energy',
+        'name': '🇺🇸 Energy & Utilities',
         'stocks': [
             {'symbol': 'XOM', 'name': 'Exxon Mobil'},
             {'symbol': 'CVX', 'name': 'Chevron'},
             {'symbol': 'COP', 'name': 'ConocoPhillips'},
+            {'symbol': 'SLB', 'name': 'Schlumberger'},
+            {'symbol': 'PSX', 'name': 'Phillips 66'},
+            {'symbol': 'NEE', 'name': 'NextEra Energy'},
+        ]
+    },
+    'usa_industrial': {
+        'name': '🇺🇸 Industrial & Aerospace',
+        'stocks': [
+            {'symbol': 'BA', 'name': 'Boeing'},
+            {'symbol': 'CAT', 'name': 'Caterpillar'},
+            {'symbol': 'GE', 'name': 'General Electric'},
+            {'symbol': 'LMT', 'name': 'Lockheed Martin'},
+            {'symbol': 'RTX', 'name': 'Raytheon Technologies'},
+            {'symbol': 'HON', 'name': 'Honeywell'},
+            {'symbol': 'UPS', 'name': 'UPS'},
+            {'symbol': 'FDX', 'name': 'FedEx'},
+        ]
+    },
+    'usa_semiconductors': {
+        'name': '🇺🇸 Semiconductors & AI',
+        'stocks': [
+            {'symbol': 'NVDA', 'name': 'NVIDIA'},
+            {'symbol': 'AMD', 'name': 'AMD'},
+            {'symbol': 'INTC', 'name': 'Intel'},
+            {'symbol': 'TSM', 'name': 'Taiwan Semiconductor'},
+            {'symbol': 'AVGO', 'name': 'Broadcom'},
+            {'symbol': 'QCOM', 'name': 'Qualcomm'},
+            {'symbol': 'MU', 'name': 'Micron'},
+            {'symbol': 'ARM', 'name': 'ARM Holdings'},
         ]
     },
     'italy': {
