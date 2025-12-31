@@ -241,9 +241,16 @@ async def generate_article(
         
         if not articles:
             logger.warning(f"⚠️ No articles found for category '{category}'")
+            
+            # Try to give more details
+            feed_names = news_scraper.CATEGORIES.get(category, [])
+            feeds_str = ', '.join(feed_names) if feed_names else 'none'
+            
             return {
                 "success": False,
-                "error": f"No recent articles found for category '{category}'"
+                "error": f"No recent articles found for category '{category}'",
+                "details": f"Tried {len(feed_names)} feeds: {feeds_str}. Check /api/news/test-feeds for diagnostics.",
+                "feeds_attempted": feed_names
             }
         
         # Generate article with AI
