@@ -22,7 +22,7 @@ export default function CommoditiesPage() {
     setMessage(`🥇 Scanning 4 commodities (15m, 1h, 4h) with ${aiProvider.toUpperCase()} AI...`)
     setResults(null)
 
-    try:
+    try {
       const url = `${BACKEND_URL}/api/commodities/scan?ai_provider=${aiProvider}`
       console.log('🚀 Calling:', url)
       
