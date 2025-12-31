@@ -85,6 +85,74 @@ async def test_feeds():
         }
 
 
+@router.get("/test-ai")
+async def test_ai_generation():
+    """Test AI article generation without RSS (diagnostic)"""
+    try:
+        logger.info("🧪 Testing AI generation with mock data...")
+        
+        # Create mock articles (no RSS needed)
+        mock_articles = [
+            {
+                'title': 'Bitcoin Surges to New Highs',
+                'summary': 'Bitcoin reaches $50,000 as institutional adoption increases',
+                'source': 'CoinDesk',
+                'link': 'https://coindesk.com/test'
+            },
+            {
+                'title': 'Ethereum 2.0 Updates',
+                'summary': 'Major upgrades coming to Ethereum network',
+                'source': 'CoinTelegraph',
+                'link': 'https://cointelegraph.com/test'
+            },
+            {
+                'title': 'Crypto Regulation News',
+                'summary': 'New regulatory framework announced',
+                'source': 'The Block',
+                'link': 'https://theblock.co/test'
+            }
+        ]
+        
+        logger.info(f"✅ Mock articles created: {len(mock_articles)}")
+        
+        # Try generating with AI
+        result = await article_generator.generate(
+            articles=mock_articles,
+            ai_provider='claude',
+            style='professional',
+            language='en',
+            max_length=300
+        )
+        
+        if result:
+            logger.info(f"✅ AI generation successful: {result.get('word_count', 0)} words")
+            return {
+                "success": True,
+                "message": "AI generation works!",
+                "article_preview": {
+                    "title": result.get('title', 'N/A'),
+                    "word_count": result.get('word_count', 0),
+                    "has_content": len(result.get('content', '')) > 0
+                }
+            }
+        else:
+            logger.error("❌ AI generation returned None")
+            return {
+                "success": False,
+                "error": "AI generation returned None - check API keys and logs"
+            }
+            
+    except Exception as e:
+        logger.error(f"❌ Test AI error: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 @router.get("/feeds")
 async def get_available_feeds():
     """Get list of available RSS feeds by category"""
