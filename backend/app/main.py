@@ -423,6 +423,32 @@ async def get_scan_setups(scan_id: int):
         }
 
 
+@app.get("/api/setups/all")
+async def get_all_setups(
+    limit: int = 100,
+    status: str = None,
+    timeframe: str = None
+):
+    """Get all recent setups with optional filters"""
+    try:
+        setups = trade_tracker.get_all_setups(
+            limit=limit,
+            status=status,
+            timeframe=timeframe
+        )
+        return {
+            "success": True,
+            "count": len(setups),
+            "setups": setups
+        }
+    except Exception as e:
+        logger.error(f"❌ Error getting all setups: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
 @app.get("/api/test/telegram")
 async def test_telegram():
     """Test Telegram connection"""

@@ -145,6 +145,37 @@ class TradeTracker:
         finally:
             db.close()
     
+    def get_all_setups(
+        self, 
+        limit: int = 100,
+        status: str = None,
+        market_type: str = None,
+        timeframe: str = None
+    ) -> List[Dict]:
+        """Get all recent setups with optional filters"""
+        db = SessionLocal()
+        try:
+            query = db.query(TradeSetup)
+            
+            # Apply filters if provided
+            if status:
+                query = query.filter(TradeSetup.status == status)
+            if timeframe:
+                query = query.filter(TradeSetup.timeframe == timeframe)
+            
+            # Order by most recent first
+            setups = query.order_by(
+                TradeSetup.created_at.desc()
+            ).limit(limit).all()
+            
+            return [setup.to_dict() for setup in setups]
+            
+        except Exception as e:
+            logger.error(f"❌ Error fetching all setups: {e}")
+            return []
+        finally:
+            db.close()
+    
     def get_stats(self) -> Dict:
         """Get overall statistics for auto-learning"""
         db = SessionLocal()
