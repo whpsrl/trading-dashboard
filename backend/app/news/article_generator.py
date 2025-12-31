@@ -105,12 +105,15 @@ RISPOSTA RICHIESTA (JSON):
 }}
 
 IMPORTANTE:
-- Rispond SOLO con il JSON valido, nient'altro
-- NO testo prima o dopo il JSON
+- Rispondi SOLO con il JSON valido, nient'altro
+- NO testo prima del JSON
+- NO testo dopo il JSON  
+- NO markdown code blocks (```json)
+- Inizia direttamente con {{ e termina con }}
 - Usa virgolette doppie per JSON
-- Escape caratteri speciali in HTML
+- Escape caratteri speciali in HTML (&lt; &gt; &amp; &quot;)
 
-Genera l'articolo ora:"""
+Genera SOLO il JSON ora (inizia con {{):"""
         
         return prompt
     
@@ -212,25 +215,79 @@ Genera l'articolo ora:"""
         if not content:
             return None
         
-        # Extract sources
-        sources = [
-            {'title': a.get('title'), 'link': a.get('link'), 'source': a.get('source')}
-            for a in articles[:5]
-        ]
-        
-        result = {
-            'content': content,
-            'sources': sources,
-            'ai_provider': ai_provider,
-            'style': style,
-            'language': language,
-            'generated_at': datetime.utcnow().isoformat(),
-            'word_count': len(content.split())
-        }
-        
-        logger.info(f"✅ Article generated: {result['word_count']} words")
-        
-        return result
+        # Parse JSON from response (AI might add text before/after)
+        try:
+            # Try to find JSON in the response
+            import re
+            import json
+            
+            # Method 1: Find JSON object with regex
+            json_match = re.search(r'\{[\s\S]*\}', content)
+            if json_match:
+                json_str = json_match.group(0)
+                try:
+                    article_data = json.loads(json_str)
+                    logger.info(f"✅ JSON parsed successfully")
+                except json.JSONDecodeError as e:
+                    logger.error(f"❌ JSON parse error: {e}")
+                    logger.error(f"JSON string: {json_str[:500]}...")
+                    
+                    # Method 2: Try to fix common issues
+                    # Remove markdown code blocks
+                    json_str = re.sub(r'```json\s*', '', json_str)
+                    json_str = re.sub(r'```\s*$', '', json_str)
+                    
+                    try:
+                        article_data = json.loads(json_str)
+                        logger.info(f"✅ JSON parsed after cleanup")
+                    except:
+                        logger.error(f"❌ Could not parse JSON even after cleanup")
+                        return None
+            else:
+                logger.error(f"❌ No JSON found in response")
+                logger.error(f"Response preview: {content[:500]}...")
+                return None
+            
+            # Validate required fields
+            required_fields = ['title', 'content']
+            for field in required_fields:
+                if field not in article_data:
+                    logger.error(f"❌ Missing required field: {field}")
+                    return None
+            
+            # Extract sources
+            sources = [
+                {'title': a.get('title'), 'link': a.get('link'), 'source': a.get('source')}
+                for a in articles[:5]
+            ]
+            
+            result = {
+                'content': article_data.get('content', ''),
+                'title': article_data.get('title', 'Untitled'),
+                'excerpt': article_data.get('excerpt', ''),
+                'meta_title': article_data.get('meta_title', article_data.get('title', '')),
+                'meta_description': article_data.get('meta_description', article_data.get('excerpt', '')),
+                'meta_keywords': article_data.get('meta_keywords', ''),
+                'read_time': article_data.get('read_time', max(3, max_length // 200)),
+                'key_points': article_data.get('key_points', []),
+                'sources': sources,
+                'ai_provider': ai_provider,
+                'style': style,
+                'language': language,
+                'generated_at': datetime.utcnow().isoformat(),
+                'word_count': len(article_data.get('content', '').split())
+            }
+            
+            logger.info(f"✅ Article generated: {result['word_count']} words")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error parsing AI response: {e}")
+            import traceback
+            traceback.print_exc()
+            logger.error(f"Raw response: {content[:1000]}...")
+            return None
     
     def format_for_telegram(self, article: Dict) -> str:
         """Format article for Telegram with HTML"""
