@@ -32,14 +32,14 @@ class AutoScannerCommodities:
             # Create scan session
             scan_id = self.trade_tracker.create_scan_session(
                 scan_type='auto_commodities_4h',
-                top_n=3,
+                top_n=4,
                 timeframes=['4h'],
                 ai_provider=settings.AUTO_SCAN_AI_PROVIDER
             )
             
             # Initialize Yahoo fetcher
             yahoo_fetcher = YahooFetcher()
-            commodities = ['GC=F', 'CL=F', 'SI=F']  # Gold, Oil, Silver
+            commodities = ['GC=F', 'CL=F', 'SI=F', 'ZW=F']  # Gold, Oil, Silver, Wheat
             
             # Initialize scanner with Yahoo fetcher
             scanner = TradingScanner(

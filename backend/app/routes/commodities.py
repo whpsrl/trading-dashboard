@@ -12,11 +12,11 @@ router = APIRouter()
 
 @router.post("/scan")
 async def scan_commodities(
-    ai_provider: str = Query("claude", pattern="^(claude|groq)$"),
-    timeframe: str = Query("4h", pattern="^(15m|1h|4h)$")
+    ai_provider: str = Query("claude", pattern="^(claude|groq)$")
 ):
     """
-    Scan top 3 commodities (Gold, Oil, Silver) on selected timeframe (15m, 1h, 4h)
+    Scan 4 commodities (Gold, Oil, Silver, Wheat) on all timeframes (15m, 1h, 4h)
+    Like crypto scanner - analyzes all timeframes together
     """
     try:
         from ..market_data.yahoo_fetcher import YahooFetcher
@@ -24,13 +24,14 @@ async def scan_commodities(
         from ..config import settings
         from ..database.tracker import TradeTracker
         
-        logger.info(f"🥇 Starting commodities scan on {timeframe.upper()} with {ai_provider.upper()} AI...")
+        logger.info(f"🥇 Starting commodities scan (15m, 1h, 4h) with {ai_provider.upper()} AI...")
         
         # Initialize fetcher
         yahoo_fetcher = YahooFetcher()
         
         # Get commodity symbols
-        commodities = ['GC=F', 'CL=F', 'SI=F']  # Gold, Oil, Silver
+        commodities = ['GC=F', 'CL=F', 'SI=F', 'ZW=F']  # Gold, Oil, Silver, Wheat
+        timeframes = ['15m', '1h', '4h']  # All timeframes like crypto
         
         # Initialize scanner with Yahoo fetcher
         scanner = TradingScanner(
@@ -52,73 +53,74 @@ async def scan_commodities(
         trade_tracker = TradeTracker()
         scan_id = trade_tracker.create_scan_session(
             scan_type='manual_commodities',
-            top_n=3,
-            timeframes=[timeframe],
+            top_n=4,
+            timeframes=timeframes,
             ai_provider=ai_provider
         )
         
-        # Scan each commodity
+        # Scan each commodity on each timeframe (like crypto)
         all_setups = []
-        for symbol in commodities:
-            try:
-                # Get symbol info
-                symbol_info = yahoo_fetcher.get_symbol_info(symbol)
-                display_name = symbol_info['name'] if symbol_info else symbol
-                
-                logger.info(f"   Analyzing {display_name} ({symbol}) on {timeframe.upper()}...")
-                
-                # Fetch OHLCV data
-                ohlcv = await yahoo_fetcher.fetch_ohlcv(symbol, timeframe, limit=100)
-                
-                if not ohlcv or len(ohlcv) < 50:
-                    logger.warning(f"⚠️ Insufficient data for {symbol}")
+        for timeframe in timeframes:
+            for symbol in commodities:
+                try:
+                    # Get symbol info
+                    symbol_info = yahoo_fetcher.get_symbol_info(symbol)
+                    display_name = symbol_info['name'] if symbol_info else symbol
+                    
+                    logger.info(f"   Analyzing {display_name} on {timeframe.upper()}...")
+                    
+                    # Fetch OHLCV data
+                    ohlcv = await yahoo_fetcher.fetch_ohlcv(symbol, timeframe, limit=100)
+                    
+                    if not ohlcv or len(ohlcv) < 50:
+                        logger.warning(f"⚠️ Insufficient data for {symbol} on {timeframe}")
+                        continue
+                    
+                    # Get AI analysis
+                    if ai_provider == 'claude':
+                        analysis = await scanner.claude.analyze_setup(display_name, ohlcv, timeframe)
+                    else:
+                        analysis = await scanner.groq.analyze_setup(display_name, ohlcv, timeframe)
+                    
+                    if not analysis or analysis.get('confidence', 0) < settings.MIN_CONFIDENCE_SCORE:
+                        logger.info(f"   {display_name} {timeframe}: Low confidence, skipping")
+                        continue
+                    
+                    # Get current price
+                    current_price = ohlcv[-1][4]  # Close price of last candle
+                    
+                    # Calculate market strength (simplified for commodities)
+                    market_strength = {
+                        'score': 70,  # Default score for commodities
+                        'rating': '⚪ Neutral',
+                        'reason': 'Commodity market strength'
+                    }
+                    
+                    # Build setup
+                    setup = {
+                        'symbol': display_name,
+                        'yahoo_symbol': symbol,
+                        'timeframe': timeframe,
+                        'direction': analysis.get('direction', 'NEUTRAL'),
+                        'confidence': analysis.get('confidence', 0),
+                        'entry': analysis.get('entry', current_price),
+                        'stop_loss': analysis.get('stop_loss', current_price * 0.98),
+                        'take_profit': analysis.get('take_profit', current_price * 1.02),
+                        'reasoning': analysis.get('reasoning', 'No reasoning provided'),
+                        'market_strength': market_strength,
+                        'ai_provider': ai_provider,
+                        'market_type': 'commodity'
+                    }
+                    
+                    all_setups.append(setup)
+                    logger.info(f"   ✅ {display_name} {timeframe}: {setup['direction']} @ {setup['confidence']}%")
+                    
+                    # Save to database
+                    trade_tracker.save_setup(setup, scan_id=scan_id)
+                    
+                except Exception as e:
+                    logger.error(f"❌ Error analyzing {symbol} on {timeframe}: {e}")
                     continue
-                
-                # Get AI analysis
-                if ai_provider == 'claude':
-                    analysis = await scanner.claude.analyze_setup(display_name, ohlcv, timeframe)
-                else:
-                    analysis = await scanner.groq.analyze_setup(display_name, ohlcv, timeframe)
-                
-                if not analysis or analysis.get('confidence', 0) < settings.MIN_CONFIDENCE_SCORE:
-                    logger.info(f"   {display_name}: Low confidence, skipping")
-                    continue
-                
-                # Get current price
-                current_price = ohlcv[-1][4]  # Close price of last candle
-                
-                # Calculate market strength (simplified for commodities)
-                market_strength = {
-                    'score': 70,  # Default score for commodities
-                    'rating': '⚪ Neutral',
-                    'reason': 'Commodity market strength'
-                }
-                
-                # Build setup
-                setup = {
-                    'symbol': display_name,
-                    'yahoo_symbol': symbol,
-                    'timeframe': timeframe,
-                    'direction': analysis.get('direction', 'NEUTRAL'),
-                    'confidence': analysis.get('confidence', 0),
-                    'entry': analysis.get('entry', current_price),
-                    'stop_loss': analysis.get('stop_loss', current_price * 0.98),
-                    'take_profit': analysis.get('take_profit', current_price * 1.02),
-                    'reasoning': analysis.get('reasoning', 'No reasoning provided'),
-                    'market_strength': market_strength,
-                    'ai_provider': ai_provider,
-                    'market_type': 'commodity'
-                }
-                
-                all_setups.append(setup)
-                logger.info(f"   ✅ {display_name}: {setup['direction']} @ {setup['confidence']}%")
-                
-                # Save to database
-                trade_tracker.save_setup(setup, scan_id=scan_id)
-                
-            except Exception as e:
-                logger.error(f"❌ Error analyzing {symbol}: {e}")
-                continue
         
         # Complete scan session
         high_conf_count = len([s for s in all_setups if s.get('confidence', 0) >= settings.MIN_CONFIDENCE_SCORE])

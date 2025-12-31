@@ -17,6 +17,7 @@ class YahooFetcher:
         'GOLD': {'symbol': 'GC=F', 'name': 'Gold Futures', 'emoji': '🥇'},
         'OIL': {'symbol': 'CL=F', 'name': 'Crude Oil WTI', 'emoji': '🛢️'},
         'SILVER': {'symbol': 'SI=F', 'name': 'Silver Futures', 'emoji': '🥈'},
+        'WHEAT': {'symbol': 'ZW=F', 'name': 'Wheat Futures', 'emoji': '🌾'},
     }
     
     # Forex pairs

@@ -9,27 +9,21 @@ export default function CommoditiesPage() {
   const [message, setMessage] = useState('')
   const [results, setResults] = useState<any[] | null>(null)
   const [aiProvider, setAiProvider] = useState('claude')
-  const [timeframe, setTimeframe] = useState('4h')
-
-  const timeframes = [
-    { value: '15m', label: '15 Minutes', emoji: '⚡' },
-    { value: '1h', label: '1 Hour', emoji: '⏰' },
-    { value: '4h', label: '4 Hours', emoji: '📊' }
-  ]
 
   const commodities = [
     { name: 'Gold Futures', symbol: 'GC=F', emoji: '🥇', description: 'Precious metal, safe haven asset' },
     { name: 'Crude Oil WTI', symbol: 'CL=F', emoji: '🛢️', description: 'Energy commodity, global benchmark' },
     { name: 'Silver Futures', symbol: 'SI=F', emoji: '🥈', description: 'Precious metal, industrial use' },
+    { name: 'Wheat Futures', symbol: 'ZW=F', emoji: '🌾', description: 'Agricultural commodity, food staple' },
   ]
 
   const runScan = async () => {
     setScanning(true)
-    setMessage(`🥇 Scanning commodities on ${timeframe.toUpperCase()} with ${aiProvider.toUpperCase()} AI...`)
+    setMessage(`🥇 Scanning 4 commodities (15m, 1h, 4h) with ${aiProvider.toUpperCase()} AI...`)
     setResults(null)
 
-    try {
-      const url = `${BACKEND_URL}/api/commodities/scan?ai_provider=${aiProvider}&timeframe=${timeframe}`
+    try:
+      const url = `${BACKEND_URL}/api/commodities/scan?ai_provider=${aiProvider}`
       console.log('🚀 Calling:', url)
       
       const response = await fetch(url, {
@@ -91,10 +85,10 @@ export default function CommoditiesPage() {
         marginBottom: '2rem',
         lineHeight: '1.6'
       }}>
-        AI-powered analysis of major commodity futures on <strong>15M, 1H, and 4H timeframes</strong>.
+        AI-powered analysis of <strong>4 major commodity futures</strong> on <strong>15M, 1H, and 4H timeframes</strong> (all together).
         <br/>
         <span style={{ fontSize: '0.95rem', color: '#999' }}>
-          ⏰ Data from Yahoo Finance (15-20 min delay) | Auto-scan runs on 4H every 4h (+30min after candle close)
+          ⏰ Data from Yahoo Finance (15-20 min delay) | Auto-scan: 4H only, every 4h (+30min after candle close)
         </span>
       </p>
 
@@ -148,36 +142,6 @@ export default function CommoditiesPage() {
             color: '#555',
             marginBottom: '0.5rem'
           }}>
-            📊 Timeframe
-          </label>
-          <select 
-            value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              fontSize: '1rem',
-              borderRadius: '8px',
-              border: '2px solid #e5e7eb',
-              backgroundColor: 'white',
-              cursor: 'pointer',
-              marginBottom: '1rem'
-            }}
-          >
-            <option value="15m">⚡ 15 Minutes (Scalping)</option>
-            <option value="1h">⏰ 1 Hour (Intraday)</option>
-            <option value="4h">📊 4 Hours (Swing - default)</option>
-          </select>
-        </div>
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'block',
-            fontSize: '0.9rem',
-            fontWeight: '600',
-            color: '#555',
-            marginBottom: '0.5rem'
-          }}>
             🤖 AI Provider
           </label>
           <select 
@@ -196,6 +160,12 @@ export default function CommoditiesPage() {
             <option value="claude">Claude Sonnet 4 (default)</option>
             <option value="groq">Groq (Llama 3.3 - FAST!)</option>
           </select>
+        </div>
+
+        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+          <p style={{ fontSize: '0.9rem', color: '#1e40af', margin: 0 }}>
+            📊 <strong>Timeframes:</strong> 15m, 1h, 4h (all analyzed together like crypto)
+          </p>
         </div>
 
         <button
@@ -227,7 +197,7 @@ export default function CommoditiesPage() {
             e.currentTarget.style.boxShadow = '0 4px 15px rgba(245, 158, 11, 0.3)'
           }}
         >
-          {scanning ? '🔄 Scanning...' : `🚀 Scan Commodities (${timeframe.toUpperCase()})`}
+          {scanning ? '🔄 Scanning...' : '🚀 Scan 4 Commodities (15m + 1h + 4h)'}
         </button>
 
         {message && (
@@ -294,13 +264,13 @@ export default function CommoditiesPage() {
           ℹ️ How Auto-Scan Works
         </h3>
         <ul style={{ listStyle: 'none', display: 'grid', gap: '0.75rem', paddingLeft: 0, color: '#78350f', fontSize: '0.95rem' }}>
-          <li>📊 <strong>Manual Scan</strong>: Choose 15m, 1h, or 4h timeframe</li>
-          <li>⏰ <strong>Auto-scan (4H only)</strong>: Every 4 hours at 04:30, 08:30, 12:30, 16:30, 20:30, 00:30 UTC</li>
-          <li>🥇 <strong>3 Commodities</strong>: Gold, Crude Oil, Silver (Yahoo Finance data)</li>
-          <li>⏳ <strong>+30 min delay</strong>: Ensures complete data availability after candle close</li>
-          <li>🤖 <strong>AI Analysis</strong>: Claude/Groq analyzes 100 candles</li>
+          <li>📊 <strong>Manual Scan</strong>: Analyzes 15m + 1h + 4h (all together, like crypto)</li>
+          <li>⏰ <strong>Auto-scan</strong>: 4H only, every 4h at 05:30, 09:30, 13:30, 17:30, 21:30, 01:30 Roma</li>
+          <li>🌾 <strong>4 Commodities</strong>: Gold, Crude Oil, Silver, Wheat (Yahoo Finance)</li>
+          <li>⏳ <strong>+30 min delay</strong>: Ensures complete data after candle close (Yahoo limitation)</li>
+          <li>🤖 <strong>AI Analysis</strong>: Claude/Groq analyzes 100 candles per timeframe</li>
           <li>📱 <strong>Telegram Alerts</strong>: Automatic notifications for high-confidence setups</li>
-          <li>🔄 <strong>Trade Tracking</strong>: Monitors TP/SL, updates performance stats</li>
+          <li>🔄 <strong>Trade Tracking</strong>: Monitors TP/SL automatically, updates performance</li>
         </ul>
       </div>
     </div>
