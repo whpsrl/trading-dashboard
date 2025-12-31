@@ -22,7 +22,8 @@ class TradeTracker:
         self,
         scan_type: str = 'manual',
         top_n: int = 15,
-        timeframes: List[str] = None
+        timeframes: List[str] = None,
+        ai_provider: str = 'claude'
     ) -> int:
         """
         Create a new scan session
@@ -34,6 +35,7 @@ class TradeTracker:
                 scan_type=scan_type,
                 top_n_coins=top_n,
                 timeframes=timeframes or ['15m', '1h', '4h'],
+                ai_provider=ai_provider,
                 started_at=datetime.utcnow(),
                 status='running'
             )
@@ -41,7 +43,7 @@ class TradeTracker:
             db.commit()
             db.refresh(scan)
             
-            logger.info(f"📊 Created scan session #{scan.id}")
+            logger.info(f"📊 Created scan session #{scan.id} with {ai_provider.upper()} AI")
             return scan.id
             
         except Exception as e:

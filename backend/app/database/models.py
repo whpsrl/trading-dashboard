@@ -67,9 +67,10 @@ class ScanResult(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # Scan metadata
-    scan_type = Column(String, default='manual')  # manual, auto_hourly
+    scan_type = Column(String, default='manual')  # manual, auto_hourly, manual_commodities, auto_commodities_4h
     top_n_coins = Column(Integer, default=15)
     timeframes = Column(JSON)  # ['15m', '1h', '4h']
+    ai_provider = Column(String, default='claude')  # claude, groq
     
     # Results
     setups_found = Column(Integer, default=0)
@@ -90,6 +91,7 @@ class ScanResult(Base):
             'scan_type': self.scan_type,
             'top_n_coins': self.top_n_coins,
             'timeframes': self.timeframes,
+            'ai_provider': self.ai_provider,
             'setups_found': self.setups_found,
             'high_confidence_count': self.high_confidence_count,
             'started_at': self.started_at.isoformat() if self.started_at else None,
