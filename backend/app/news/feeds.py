@@ -53,8 +53,15 @@ class NewsFeedScraper:
         try:
             logger.info(f"📡 Fetching RSS feed: {feed_url}")
             
-            # Run feedparser in thread pool (it's blocking/synchronous)
-            feed = await asyncio.to_thread(feedparser.parse, feed_url)
+            # Run feedparser in thread pool with timeout (10 seconds)
+            try:
+                feed = await asyncio.wait_for(
+                    asyncio.to_thread(feedparser.parse, feed_url),
+                    timeout=10.0
+                )
+            except asyncio.TimeoutError:
+                logger.error(f"⏱️ Timeout fetching {feed_url} (>10s)")
+                return []
             
             if not feed:
                 logger.warning(f"⚠️ Empty response from {feed_url}")
@@ -116,6 +123,7 @@ class NewsFeedScraper:
         
         feed_names = self.CATEGORIES[category]
         all_articles = []
+        failed_feeds = []
         
         # Fetch from all feeds in category
         for feed_name in feed_names:
@@ -128,6 +136,11 @@ class NewsFeedScraper:
             
             articles = await self.fetch_feed(feed_url)
             
+            if not articles:
+                failed_feeds.append(feed_name)
+                logger.warning(f"   ⚠️ No articles from {feed_name}")
+                continue
+            
             # Add metadata
             for article in articles:
                 article['category'] = category
@@ -136,7 +149,15 @@ class NewsFeedScraper:
             all_articles.extend(articles)
             logger.info(f"   ✅ Got {len(articles)} articles from {feed_name}")
         
-        logger.info(f"✅ Total articles fetched: {len(all_articles)}")
+        # Log summary
+        logger.info(f"✅ Total articles fetched: {len(all_articles)} (Failed feeds: {len(failed_feeds)}/{len(feed_names)})")
+        if failed_feeds:
+            logger.warning(f"   Failed: {', '.join(failed_feeds)}")
+        
+        # If ALL feeds failed, return empty (will trigger error in route)
+        if len(failed_feeds) == len(feed_names):
+            logger.error(f"❌ ALL feeds failed for category {category}")
+            return []
         
         # Sort by published date (most recent first)
         try:

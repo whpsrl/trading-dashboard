@@ -22,6 +22,69 @@ def get_telegram():
         return None
 
 
+@router.get("/test-feeds")
+async def test_feeds():
+    """Test RSS feed fetching - diagnostic endpoint"""
+    try:
+        import feedparser
+        import asyncio
+        
+        test_results = {}
+        
+        # Test simple feed
+        test_feeds = {
+            'coindesk': 'https://www.coindesk.com/arc/outboundfeeds/rss/',
+            'techcrunch': 'https://techcrunch.com/feed/',
+            'decrypt': 'https://decrypt.co/feed'
+        }
+        
+        for name, url in test_feeds.items():
+            try:
+                logger.info(f"Testing feed: {name} - {url}")
+                
+                # Try with timeout
+                feed = await asyncio.wait_for(
+                    asyncio.to_thread(feedparser.parse, url),
+                    timeout=10.0
+                )
+                
+                entries_count = len(feed.entries) if hasattr(feed, 'entries') else 0
+                feed_title = feed.feed.get('title', 'N/A') if hasattr(feed, 'feed') else 'N/A'
+                
+                test_results[name] = {
+                    'success': True,
+                    'url': url,
+                    'feed_title': feed_title,
+                    'entries_count': entries_count,
+                    'sample_entry': feed.entries[0].get('title', 'N/A') if entries_count > 0 else 'No entries'
+                }
+                
+                logger.info(f"✅ {name}: {entries_count} entries")
+                
+            except asyncio.TimeoutError:
+                test_results[name] = {'success': False, 'error': 'Timeout (>10s)', 'url': url}
+                logger.error(f"❌ {name}: Timeout")
+            except Exception as e:
+                test_results[name] = {'success': False, 'error': str(e), 'url': url}
+                logger.error(f"❌ {name}: {e}")
+        
+        return {
+            "success": True,
+            "feedparser_version": feedparser.__version__,
+            "test_results": test_results
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Test error: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 @router.get("/feeds")
 async def get_available_feeds():
     """Get list of available RSS feeds by category"""
