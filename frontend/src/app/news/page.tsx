@@ -59,13 +59,32 @@ export default function NewsPage() {
         method: 'POST'
       })
 
+      if (!response.ok) {
+        // Try to parse error message
+        let errorMsg = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMsg = errorData.error || errorData.detail || errorMsg
+        } catch {
+          // Not JSON, might be HTML error page
+          const text = await response.text()
+          if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+            errorMsg = `Server error (${response.status}). Check backend logs.`
+          } else {
+            errorMsg = text.substring(0, 200)
+          }
+        }
+        alert(`Error: ${errorMsg}`)
+        return
+      }
+
       const data = await response.json()
       
       if (data.success) {
         setGeneratedArticle(data)
         fetchArticles() // Refresh article list
       } else {
-        alert(`Error: ${data.error}`)
+        alert(`Error: ${data.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error generating article:', error)
@@ -98,13 +117,31 @@ export default function NewsPage() {
       const response = await fetch(`${BACKEND_URL}/api/news/publish/${articleId}?topic=${topic}`, {
         method: 'POST'
       })
+
+      if (!response.ok) {
+        let errorMsg = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMsg = errorData.error || errorData.detail || errorMsg
+        } catch {
+          const text = await response.text()
+          if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+            errorMsg = `Server error (${response.status}). Check backend logs.`
+          } else {
+            errorMsg = text.substring(0, 200)
+          }
+        }
+        alert(`Error: ${errorMsg}`)
+        return
+      }
+      
       const data = await response.json()
       
       if (data.success) {
         alert('✅ Article published to Telegram!')
         fetchArticles()
       } else {
-        alert(`Error: ${data.error}`)
+        alert(`Error: ${data.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error publishing article:', error)
