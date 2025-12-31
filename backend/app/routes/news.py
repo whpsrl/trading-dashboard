@@ -7,11 +7,19 @@ from typing import List, Dict, Optional
 from ..news.feeds import news_scraper
 from ..news.article_generator import article_generator
 from ..database.tracker import trade_tracker
-from ..telegram import telegram
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def get_telegram():
+    """Get telegram instance from main module"""
+    try:
+        from .. import main
+        return main.telegram
+    except:
+        return None
 
 
 @router.get("/feeds")
@@ -92,18 +100,23 @@ async def generate_article(
         logger.info(f"📰 Generating {language} article about {category} with {ai_provider.upper()}...")
         
         # Fetch recent news
+        logger.info(f"📡 Fetching news for category: {category}, keyword: {keyword}")
         if keyword:
             articles = await news_scraper.search_topic(keyword, category)
         else:
             articles = await news_scraper.fetch_category(category, max_articles=10)
         
+        logger.info(f"✅ Fetched {len(articles)} articles")
+        
         if not articles:
+            logger.warning(f"⚠️ No articles found for category '{category}'")
             return {
                 "success": False,
                 "error": f"No recent articles found for category '{category}'"
             }
         
         # Generate article with AI
+        logger.info(f"🤖 Generating article with {ai_provider}...")
         result = await article_generator.generate(
             articles=articles,
             ai_provider=ai_provider,
@@ -113,10 +126,13 @@ async def generate_article(
         )
         
         if not result:
+            logger.error("❌ AI generation returned None")
             return {
                 "success": False,
-                "error": "Failed to generate article"
+                "error": "Failed to generate article with AI. Check API keys and rate limits."
             }
+        
+        logger.info(f"✅ Article generated: {result.get('word_count', 0)} words")
         
         # Format for Telegram
         telegram_content = article_generator.format_for_telegram(result)
@@ -152,6 +168,8 @@ async def generate_article(
                 logger.info(f"✅ Article saved to database with ID: {article_id}")
             except Exception as e:
                 logger.error(f"❌ Error saving article to DB: {e}")
+                import traceback
+                traceback.print_exc()
                 db.rollback()
             finally:
                 db.close()
@@ -166,6 +184,8 @@ async def generate_article(
         
     except Exception as e:
         logger.error(f"❌ Error generating article: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -214,6 +234,8 @@ async def publish_article(
     """Publish article to Telegram"""
     from ..database.tracker import SessionLocal
     from ..database.models import NewsArticle
+    
+    telegram = get_telegram()
     
     if not telegram or not telegram.is_available():
         raise HTTPException(status_code=503, detail="Telegram not available")

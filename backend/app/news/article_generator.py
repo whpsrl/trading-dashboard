@@ -84,6 +84,7 @@ Write the article now:"""
         try:
             prompt = self._build_prompt(articles, style, language, max_length)
             
+            # Synchronous call (Claude SDK doesn't require async)
             response = self.claude_client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=2000,
@@ -99,6 +100,8 @@ Write the article now:"""
             
         except Exception as e:
             logger.error(f"Error generating article with Claude: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     async def generate_with_groq(
@@ -116,6 +119,7 @@ Write the article now:"""
         try:
             prompt = self._build_prompt(articles, style, language, max_length)
             
+            # Synchronous call
             response = self.groq_client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[{
@@ -131,6 +135,8 @@ Write the article now:"""
             
         except Exception as e:
             logger.error(f"Error generating article with Groq: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     async def generate(
