@@ -46,7 +46,10 @@ export default function StocksPage() {
     if (allSelected) {
       setSelectedStocks(prev => prev.filter(s => !symbols.includes(s)))
     } else {
-      setSelectedStocks(prev => [...new Set([...prev, ...symbols])])
+      setSelectedStocks(prev => {
+        const combined = [...prev, ...symbols]
+        return Array.from(new Set(combined))
+      })
     }
   }
 
