@@ -80,18 +80,19 @@ class AutoScanner:
     def start(self):
         """Start the scheduler"""
         try:
-            # Run every 4 hours at Binance 4H candle close: 03:00, 07:00, 11:00, 15:00, 19:00, 23:00 UTC
-            # (04:00, 08:00, 12:00, 16:00, 20:00, 00:00 Italy time)
+            # Run every 4 hours RIGHT AFTER Binance 4H candle close
+            # Candles close at: 03:59, 07:59, 11:59, 15:59, 19:59, 23:59 UTC
+            # Scans run at: 04:00, 08:00, 12:00, 16:00, 20:00, 00:00 UTC (05:00, 09:00, 13:00, 17:00, 21:00, 01:00 Italy)
             self.scheduler.add_job(
                 self.run_4h_scan,
-                CronTrigger(hour='3,7,11,15,19,23', minute=0),
+                CronTrigger(hour='0,4,8,12,16,20', minute=0),
                 id='scan_4h',
                 name='4H Market Scan (Candle Close)',
                 replace_existing=True
             )
             
             self.scheduler.start()
-            logger.info("✅ Auto-scan scheduler started (runs every 4h at Binance candle close: 03:00, 07:00, 11:00, 15:00, 19:00, 23:00 UTC)")
+            logger.info("✅ Auto-scan scheduler started (runs every 4h after candle close: 04:00, 08:00, 12:00, 16:00, 20:00, 00:00 UTC)")
             
         except Exception as e:
             logger.error(f"❌ Scheduler start error: {e}")
