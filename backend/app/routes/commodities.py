@@ -38,9 +38,11 @@ async def scan_commodities(
             claude_key=settings.ANTHROPIC_API_KEY,
             groq_key=settings.GROQ_API_KEY,
             top_n_coins=3,  # Fixed to 3 commodities
-            min_confidence=settings.MIN_CONFIDENCE_SCORE,
-            default_ai_provider=ai_provider
+            min_confidence=settings.MIN_CONFIDENCE_SCORE
         )
+        
+        # Set AI provider
+        scanner.set_ai_provider(ai_provider)
         
         # Replace Binance fetcher with Yahoo fetcher
         scanner.fetcher = yahoo_fetcher

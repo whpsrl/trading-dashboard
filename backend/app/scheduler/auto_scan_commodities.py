@@ -48,12 +48,13 @@ class AutoScannerCommodities:
                 claude_key=settings.ANTHROPIC_API_KEY,
                 groq_key=settings.GROQ_API_KEY,
                 top_n_coins=3,
-                min_confidence=settings.MIN_CONFIDENCE_SCORE,
-                default_ai_provider=settings.AUTO_SCAN_AI_PROVIDER
+                min_confidence=settings.MIN_CONFIDENCE_SCORE
             )
-            scanner.fetcher = yahoo_fetcher
             
             ai_provider = settings.AUTO_SCAN_AI_PROVIDER
+            scanner.set_ai_provider(ai_provider)
+            scanner.fetcher = yahoo_fetcher
+            
             logger.info(f"   Using AI: {ai_provider.upper()}")
             
             # Scan each commodity
