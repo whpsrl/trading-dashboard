@@ -103,15 +103,29 @@ async def get_stocks_list():
 
 @router.post("/scan")
 async def scan_stocks(
-    selected_symbols: List[str] = Body(..., description="List of stock symbols to scan"),
     ai_provider: str = Query("claude", pattern="^(claude|groq)$"),
-    timeframes: List[str] = Query(['4h'], description="Timeframes to analyze")
+    data: dict = Body(...)
 ):
     """
     Scan selected stocks on specified timeframes
     User selects which stocks to analyze
+    
+    Body format:
+    {
+        "selected_symbols": ["AAPL", "MSFT", ...],
+        "timeframes": ["15m", "1h", "4h"]
+    }
     """
     try:
+        selected_symbols = data.get('selected_symbols', [])
+        timeframes = data.get('timeframes', ['4h'])
+        
+        if not selected_symbols:
+            return {"success": False, "error": "No stocks selected"}
+        
+        if not timeframes:
+            return {"success": False, "error": "No timeframes selected"}
+        
         from ..market_data.yahoo_fetcher import YahooFetcher
         from ..scanner.scanner import TradingScanner
         from ..config import settings

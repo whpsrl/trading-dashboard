@@ -87,16 +87,24 @@ export default function StocksPage() {
         })
       })
 
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Scan error response:', errorText)
+        alert(`Error: HTTP ${response.status} - ${errorText.substring(0, 200)}`)
+        return
+      }
+
       const data = await response.json()
+      console.log('Scan response:', data)
       
       if (data.success) {
         setResults(data)
       } else {
-        alert(`Error: ${data.error}`)
+        alert(`Error: ${data.error || 'Unknown error'}`)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error scanning stocks:', error)
-      alert('Failed to scan stocks')
+      alert(`Failed to scan stocks: ${error.message || 'Unknown error'}`)
     } finally {
       setScanning(false)
     }
