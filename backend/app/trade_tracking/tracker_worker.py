@@ -47,6 +47,12 @@ class TradeTrackerWorker:
     
     async def check_all_open_trades(self):
         """Check all open trades for TP/SL hits"""
+        # Check if system is enabled
+        from app.admin.system_controller import system_controller
+        if not system_controller.is_enabled:
+            logger.debug("🔴 SYSTEM DISABLED - Skipping trade tracking")
+            return
+        
         db = SessionLocal()
         try:
             # Get all open trades

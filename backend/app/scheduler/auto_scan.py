@@ -23,6 +23,12 @@ class AutoScanner:
     async def run_4h_scan(self):
         """Execute 4h scan (synchronized with candle close)"""
         try:
+            # Check if system is enabled
+            from app.admin.system_controller import system_controller
+            if not system_controller.is_enabled:
+                logger.warning("🔴 SYSTEM DISABLED - Skipping auto-scan")
+                return
+            
             logger.info("🕐 Starting automatic 4H scan (candle close)...")
             
             # Create scan session

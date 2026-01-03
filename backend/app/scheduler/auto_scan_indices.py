@@ -24,6 +24,12 @@ class AutoScannerIndices:
     async def run_4h_scan(self):
         """Execute 4h indices scan (1h after candle close for Yahoo data delay)"""
         try:
+            # Check if system is enabled
+            from app.admin.system_controller import system_controller
+            if not system_controller.is_enabled:
+                logger.warning("🔴 SYSTEM DISABLED - Skipping indices auto-scan")
+                return
+            
             logger.info("📊 Starting automatic INDICES 4H scan (Top 8 global indices - 1h after candle close)...")
             
             from ..market_data.yahoo_fetcher import YahooFetcher

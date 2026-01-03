@@ -23,6 +23,12 @@ class AutoScannerCommodities:
     async def run_4h_scan(self):
         """Execute 4h commodities scan (30 min after candle close for Yahoo data delay)"""
         try:
+            # Check if system is enabled
+            from app.admin.system_controller import system_controller
+            if not system_controller.is_enabled:
+                logger.warning("🔴 SYSTEM DISABLED - Skipping commodities auto-scan")
+                return
+            
             logger.info("🥇 Starting automatic COMMODITIES 4H scan (30min after candle close)...")
             
             from ..market_data.yahoo_fetcher import YahooFetcher

@@ -36,6 +36,12 @@ class AutoNewsScheduler:
     async def generate_and_post_article(self, category: str):
         """Generate article for a category and post to Telegram"""
         try:
+            # Check if system is enabled
+            from app.admin.system_controller import system_controller
+            if not system_controller.is_enabled:
+                logger.warning("🔴 SYSTEM DISABLED - Skipping news article generation")
+                return
+            
             logger.info(f"📰 Auto-generating {category} article...")
             
             # Fetch recent news
